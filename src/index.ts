@@ -1,5 +1,5 @@
 
-import IPMatch, { IP } from './ip';
+import { IP, IPMatch } from './ip';
 
 export * from './ip';
 

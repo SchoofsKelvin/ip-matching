@@ -1,6 +1,6 @@
 
-const IP4_REGEX = /^(\d{1,3}\.){3}\d{1,3}$/;
-const IP6_REGEX = /^(([a-f\d]{1,4}|\*)::?)+([a-f\d]{1,4}|\*)$/;
+const IP4_REGEX = /^(\d{1,3}\.|\*\.){3}(\d{1,3}|\*)$/;
+const IP6_REGEX = /^((([a-f\d]{1,4}|\*)::?)+([a-f\d]{1,4}|\*)|:(:[a-f\d]{1,4}|:\*)+|([a-f\d]{1,4}:|\*:)+:)$/;
 
 function wildcardToNumber(max: number, radix: number = 10) {
   return (input: string | number) => {
@@ -51,17 +51,17 @@ export class IPv6 implements IPMatch {
     this.input = input.trim();
     const ip = input.match(IP6_REGEX);
     if (!ip) throw new Error('Invalid input for IPv4');
-    const sides = input.split('.');
+    const sides = input.split('::');
     if (sides.length > 2) throw new Error('IPv6 addresses can only contain :: once');
     if (sides.length === 1) {
       this.parts = sides[0].split(':').map(this.WTN);
     } else {
-      const l = sides[0].split(':');
-      const r = sides[1].split(':');
+      const l = sides[0] ? sides[0].split(':') : [];
+      const r = sides[1] ? sides[1].split(':') : [];
       const t = 8 - l.length - r.length;
       if (t === 0) throw new Error('This IPv6 address doesn\'t need a ::');
       if (t < 1) throw new Error('Invalid amount of :');
-      for (let i = 0; i < t; i += 1); l.push('0');
+      for (let i = 0; i < t; i += 1) l.push('0');
       this.parts = l.concat(r).map(this.WTN);
     }
   }
@@ -74,7 +74,7 @@ export class IPv6 implements IPMatch {
     }
     if (!real) throw new Error('The given value is not a valid IP');
     if (!(real instanceof IPv6)) return false;
-    for (let i = 0; i < 4; i += 1) {
+    for (let i = 0; i < 8; i += 1) {
       const given = this.WTN(real.parts[i]);
       const wanted = this.parts[i];
       if (wanted !== -1 && given !== wanted) return false;
@@ -129,7 +129,7 @@ export class IPRange implements IPMatch {
   }
 }
 
-export default class IPMatch {
+export class IPMatch {
   public readonly type: string = 'IPMatch';
   constructor(public input: any) {
     if (input instanceof IPMatch) return input;
@@ -137,15 +137,19 @@ export default class IPMatch {
     const ip = getIP(input);
     if (ip) return ip;
     const split = input.split('-');
-    if (split.length !== 2) throw new Error('A range looks like \'IP-IP\'');
-    const l = getIP(split[0]);
-    if (!l) throw new Error('Left side of the IP range isn\'t an IP');
-    const r = getIP(split[1]);
-    if (!r) throw new Error('Right side of the IP range isn\'t an IP');
-    if (l.type !== r.type) throw new Error('Expected same type of IP on both sides of range');
+    if (split.length !== 1) {
+      if (split.length !== 2) throw new Error('A range looks like \'IP-IP\'');
+      const l = getIP(split[0]);
+      if (!l) throw new Error('Left side of the IP range isn\'t an IP');
+      const r = getIP(split[1]);
+      if (!r) throw new Error('Right side of the IP range isn\'t an IP');
+      if (l.type !== r.type) throw new Error('Expected same type of IP on both sides of range');
+    }
     // TODO Create IPRange here
 
     // TODO Handle subnetworks
+
+    throw new Error('Invalid IP (range)');
   }
   public matches(ip: string | IP): boolean {
     let real: IP | null;
