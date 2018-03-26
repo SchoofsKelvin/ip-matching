@@ -11,7 +11,8 @@
   "scripts": {
     "start": "node lib/index.js",
     "noglobal": "set NODE_PATH='' && node lib/index.js",
-    "compile": "set NODE_PATH='' && tsc"
+    "compile": "set NODE_PATH='' && tsc",
+    "debug": "node -r ts-node/register -r ./hotreload -i --inspect-brk=9229"
   },
   "author": {
     "name": "Kelvin Schoofs",
