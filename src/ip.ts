@@ -78,7 +78,7 @@ export class IPv6 implements IPMatch {
     if (!real) throw new Error('The given value is not a valid IP');
     if (!(real instanceof IPv6)) return false;
     for (let i = 0; i < 8; i += 1) {
-      const given = this.WTN(real.parts[i]);
+      const given = real.parts[i];
       const wanted = this.parts[i];
       if (wanted !== -1 && given !== wanted) return false;
     }
