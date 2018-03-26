@@ -1,0 +1,16 @@
+
+logs
+*.log
+
+pids
+node_modules
+.npm
+
+*.dat
+
+.vscode
+.DS_Store
+
+lib
+
+config/default.json

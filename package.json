@@ -1,0 +1,20 @@
+{
+  "name": "ip-matcher",
+  "version": "1.0.0",
+  "description": "Matches an IP against a list of (wildcard) IPs, IP ranges and IP networks",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^9.6.0",
+    "typescript": "^2.7.2"
+  },
+  "scripts": {
+    "start": "node lib/index.js",
+    "noglobal": "set NODE_PATH='' && node lib/index.js",
+    "compile": "set NODE_PATH='' && tsc"
+  },
+  "author": {
+    "name": "Kelvin Schoofs",
+    "email": "schoofs.kelvin@gmail.com"
+  },
+  "license": "GPL-3.0"
+}

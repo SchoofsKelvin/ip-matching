@@ -1,0 +1,43 @@
+{
+    "parser": "babel-eslint",
+    "extends": "airbnb",
+    "plugins": [
+        "react",
+        "jsx-a11y",
+        "import",
+        "react-native"
+    ],
+    "rules": {
+        "no-underscore-dangle": "off",
+        "no-restricted-properties": "off",
+        "react/jsx-filename-extension": [
+            1,
+            {
+                "extensions": [
+                    ".js",
+                    ".jsx"
+                ]
+            }
+        ],
+        "react/forbid-prop-types": [
+            1,
+            {
+                "forbid": [
+                    "any",
+                    "array"
+                ]
+            }
+        ]
+    },
+    "settings": {
+        "import/resolver": {
+            "node": {
+                "extensions": [
+                    ".js",
+                    ".android.js",
+                    ".ios.js"
+                ]
+            }
+        }
+    }
+}

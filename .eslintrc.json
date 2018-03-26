@@ -1,0 +1,55 @@
+{
+  "env": {
+    "browser": true,
+    "commonjs": true,
+    "es6": true,
+    "node": true
+  },
+  "extends": "airbnb",
+  "parser": "typescript-eslint-parser",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "sourceType": "module",
+    "comment": true
+  },
+  "plugins": [
+    "typescript"
+  ],
+  "rules": {
+    "no-const-assign": "warn",
+    "no-this-before-super": "warn",
+    "no-undef": "off",
+    "no-unreachable": "warn",
+    "no-unused-vars": "warn",
+    "typescript/no-unused-vars": "warn",
+    "constructor-super": "warn",
+    "valid-typeof": "warn",
+    "linebreak-style": "off",
+    "no-param-reassign": [
+      "off",
+      {
+        "props": false
+      }
+    ],
+    "react/jsx-filename-extension": "off",
+    "react/prefer-stateless-function": "off",
+    "react/jsx-indent": "off",
+    "react/prop-types": [
+      "off",
+      {
+        "ignore": [
+          "navigation"
+        ]
+      }
+    ],
+    "class-methods-use-this": "off",
+    "max-len": "off",
+    "eqeqeq": "off",
+    "no-fallthrough": "off",
+    "no-return-assign": "off",
+    "no-loop-func": "off",
+    "no-restricted-properties": "off"
+  }
+}
