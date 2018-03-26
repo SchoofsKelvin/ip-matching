@@ -16,7 +16,7 @@ function wildcardToNumber(max: number, radix: number = 10) {
 export class IPv4 implements IPMatch {
   public readonly type = 'IPv4';
   public readonly parts: number[];
-  constructor(public input: string) {
+  constructor(public readonly input: string) {
     this.input = input.trim();
     const ip = input.match(IP4_REGEX);
     if (!ip) throw new Error('Invalid input for IPv4');
@@ -50,7 +50,7 @@ export class IPv6 implements IPMatch {
   public readonly type = 'IPv6';
   public readonly parts: number[];
   private WTN = wildcardToNumber(0xFFFF, 16);
-  constructor(public input: string) {
+  constructor(public readonly input: string) {
     this.input = input.trim();
     const ip = input.match(IP6_REGEX);
     if (!ip) throw new Error('Invalid input for IPv4');
@@ -141,15 +141,55 @@ export class IPRange implements IPMatch {
   }
 }
 
+function getLowerPart(part: number, bits: number, max: number) {
+  if (bits > max) bits = max;
+  /* tslint:disable-next-line */
+  return part & ((Math.pow(2, max)-1) ^ (Math.pow(2, bits)-1));
+}
+function getUpperPart(part: number, bits: number, max: number) {
+  if (bits > max) bits = max;
+  /* tslint:disable-next-line */
+  return part | ((Math.pow(2, max)-1) & (Math.pow(2, bits)-1));
+}
+
+export class IPSubnetwork implements IPMatch {
+  public readonly type: string = 'IPSubnetwork';
+  public input: string;
+  protected range: IPRange;
+  constructor(ip: IP, public readonly bits: number) {
+    this.input = `${ip}/${bits}`;
+    const maxBits = (ip.type === 'IPv4' ? 32 : 128);
+    if (bits < 1  || bits > maxBits) {
+      throw new Error(`A ${ip.type} subnetwork's bits should be in the range of 1-${maxBits}`);
+    }
+    const lower = new ((ip as any).constructor)(ip.input) as IP;
+    const upper = new ((ip as any).constructor)(ip.input) as IP;
+    const maxPart = ip.type === 'IPv4' ? 255 : 0xFFFF;
+    const bitsPerPart = ip.type === 'IPv4' ? 8 : 32;
+    for (let i = lower.parts.length - 1; i >= 0 && bits > 0; i -= 1) {
+      lower.parts[i] = getLowerPart(ip.parts[i], bits, bitsPerPart);
+      upper.parts[i] = getUpperPart(ip.parts[i], bits, bitsPerPart);
+      bits -= bitsPerPart;
+    }
+    this.range = new IPRange(lower, upper);
+  }
+  public matches(ip: string | IP) {
+    return this.range.matches(ip);
+  }
+  public toString() {
+    return this.input;
+  }
+}
+
 export class IPMatch {
   public static testing = 123;
   public readonly type: string = 'IPMatch';
-  constructor(public input: any) {
+  constructor(public readonly input: any) {
     if (input instanceof IPMatch) return input;
     input = `${input}`;
-    const ip = getIP(input);
+    let ip = getIP(input);
     if (ip) return ip;
-    const split = input.split('-');
+    let split = input.split('-');
     if (split.length !== 1) {
       if (split.length !== 2) throw new Error('A range looks like \'IP-IP\'');
       const l = getIP(split[0]);
@@ -159,9 +199,14 @@ export class IPMatch {
       if (l.type !== r.type) throw new Error('Expected same type of IP on both sides of range');
       return new IPRange(l, r);
     }
-    // TODO Create IPRange here
-
-    // TODO Handle subnetworks
+    split = input.split('/');
+    if (split.length !== 1) {
+      ip = getIP(split[0]);
+      if (!ip || !ip.exact()) throw new Error('Expected a valid IP for a subnetwork');
+      const bits = Number(split[1]);
+      if (!bits) throw new Error('A subnetwork looks like \'IP/bits\'');
+      return new IPSubnetwork(ip, bits);
+    }
 
     throw new Error('Invalid IP (range)');
   }
