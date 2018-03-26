@@ -15,12 +15,12 @@ function wildcardToNumber(max: number, radix: number = 10) {
 
 export class IPv4 implements IPMatch {
   public readonly type = 'IPv4';
-  public readonly parts: number[] = [];
+  public readonly parts: number[];
   constructor(public input: string) {
     this.input = input.trim();
     const ip = input.match(IP4_REGEX);
     if (!ip) throw new Error('Invalid input for IPv4');
-    const parts = input.split('.').map(wildcardToNumber(255));
+    this.parts = input.split('.').map(wildcardToNumber(255));
   }
   public matches(ip: string | IP): boolean {
     let real: IP | null;
@@ -37,6 +37,9 @@ export class IPv4 implements IPMatch {
       if (wanted !== -1 && given !== wanted) return false;
     }
     return true;
+  }
+  public exact() {
+    return !this.parts.includes(-1);
   }
   public toString() {
     return this.parts.map(v => v === -1 ? '*' : v).join('.');
@@ -81,6 +84,9 @@ export class IPv6 implements IPMatch {
     }
     return true;
   }
+  public exact() {
+    return !this.parts.includes(-1);
+  }
   public toString() {
     return this.parts.map(v => v === -1 ? '*' : v).join('.');
   }
@@ -104,6 +110,7 @@ export class IPRange implements IPMatch {
   public input: string;
   constructor(private left: IP, private right: IP) {
     if (left.type !== right.type) throw new Error('Expected same type of IP on both sides of range');
+    if (!this.isLowerOrEqual(left, right)) throw new Error('Left side of range should be lower than right side');
     this.input = left + '-' + right;
   }
   public matches(ip: string | IP): boolean {
@@ -115,21 +122,27 @@ export class IPRange implements IPMatch {
     }
     if (!real) throw new Error('The given value is not a valid IP');
     if (real.type !== this.left.type) throw new Error('Expected same type of IP as used to construct the range');
-    const l = this.left.parts;
-    const r = this.right.parts;
-    for (let i = 0; i < l.length; i += 1) {
-      const n = Number(real.parts[i]);
-      if (!n) throw new Error('Expected a real IP as input');
-      if (n < l[i] || n > r[i]) return false;
-    }
-    return true;
+    return this.isLowerOrEqual(this.left, real) && this.isLowerOrEqual(real, this.right);
   }
   public toString() {
     return this.input;
   }
+  protected isLowerOrEqual(left: IP, right: IP) {
+    const l = left.parts;
+    const r = right.parts;
+    for (let i = 0; i < l.length; i += 1) {
+      const L = l[i];
+      const R = r[i];
+      if (L === R) continue;
+      if (L < R) return true;
+      if (L > R) return false;
+    }
+    return true;
+  }
 }
 
 export class IPMatch {
+  public static testing = 123;
   public readonly type: string = 'IPMatch';
   constructor(public input: any) {
     if (input instanceof IPMatch) return input;
@@ -140,10 +153,11 @@ export class IPMatch {
     if (split.length !== 1) {
       if (split.length !== 2) throw new Error('A range looks like \'IP-IP\'');
       const l = getIP(split[0]);
-      if (!l) throw new Error('Left side of the IP range isn\'t an IP');
+      if (!l || !l.exact()) throw new Error('Left side of the IP range isn\'t a valid IP');
       const r = getIP(split[1]);
-      if (!r) throw new Error('Right side of the IP range isn\'t an IP');
+      if (!r || !r.exact()) throw new Error('Right side of the IP range isn\'t a valid IP');
       if (l.type !== r.type) throw new Error('Expected same type of IP on both sides of range');
+      return new IPRange(l, r);
     }
     // TODO Create IPRange here
 
