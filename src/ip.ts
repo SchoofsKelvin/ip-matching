@@ -98,6 +98,7 @@ export class IPv6 implements IPMatch {
 export type IP = IPv4 | IPv6;
 
 function getIP(input: string) {
+  input = input.trim();
   let m = input.match(IP4_REGEX);
   if (m) return new IPv4(input);
   m = input.match(IP6_REGEX);
