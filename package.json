@@ -1,6 +1,7 @@
 {
   "name": "ip-matcher",
   "version": "1.0.0",
+  "main": "lib/index.js",
   "description": "Matches an IP against a list of (wildcard) IPs, IP ranges and IP networks",
   "dependencies": {},
   "devDependencies": {
