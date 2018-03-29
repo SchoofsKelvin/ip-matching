@@ -89,8 +89,26 @@ export class IPv6 implements IPMatch {
   public exact() {
     return !this.parts.includes(-1);
   }
+  public toHextets() {
+    return this.parts.map(v => v === -1 ? '*' : v.toString(16));
+  }
+  public toLongString() {
+    return this.toHextets().join(':');
+  }
   public toString() {
-    return this.parts.map(v => v === -1 ? '*' : v.toString(16)).join(':');
+    const hextets = this.toHextets();
+    const score = [0,0,0,0,0,0,0,0];
+    for (let i = 0; i < 8; i += 1) {
+      for (let j = i; j < 8; j += 1) {
+        if (hextets[j] === '0') score[i] += 1; else break;
+      }
+    }
+    const best = score.reduce((prev, s, key) => s > score[prev] ? key : prev, 0);
+    if (score[best]) {
+      hextets.splice(best, score[best] - 1);
+      hextets[best] = '';
+    }
+    return hextets.join(':').replace(/(^:|:$)/, '::');
   }
   protected trim(part: string) {
     return part.trim().replace(/^0+/,'').toLowerCase();
@@ -161,7 +179,6 @@ export class IPSubnetwork implements IPMatch {
   public readonly input: string;
   protected range: IPRange;
   constructor(ip: IP, public readonly bits: number) {
-    this.input = `${ip}/${bits}`;
     const maxBits = (ip.type === 'IPv4' ? 32 : 128);
     if (bits < 1  || bits > maxBits) {
       throw new Error(`A ${ip.type} subnetwork's bits should be in the range of 1-${maxBits}`);
@@ -178,6 +195,7 @@ export class IPSubnetwork implements IPMatch {
     lower = new ((ip as any).constructor)(lower.toString());
     upper = new ((ip as any).constructor)(upper.toString());
     this.range = new IPRange(lower, upper);
+    this.input = `${lower}/${bits}`;
   }
   public matches(ip: string | IP) {
     return this.range.matches(ip);
@@ -188,7 +206,6 @@ export class IPSubnetwork implements IPMatch {
 }
 
 export class IPMatch {
-  public static testing = 123;
   public readonly type: string = 'IPMatch';
   constructor(public readonly input: any) {
     if (input instanceof IPMatch) return input;
