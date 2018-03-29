@@ -49,11 +49,13 @@ export class IPv4 implements IPMatch {
 export class IPv6 implements IPMatch {
   public readonly type = 'IPv6';
   public readonly parts: number[];
+  public readonly input: string;
   private WTN = wildcardToNumber(0xFFFF, 16);
-  constructor(public readonly input: string) {
-    this.input = input.trim();
+  constructor(input: string) {
+    input = input.trim();
+    this.input = input;
     const ip = input.match(IP6_REGEX);
-    if (!ip) throw new Error('Invalid input for IPv4');
+    if (!ip) throw new Error('Invalid input for IPv6');
     const sides = input.split('::');
     if (sides.length > 2) throw new Error('IPv6 addresses can only contain :: once');
     if (sides.length === 1) {
@@ -88,7 +90,7 @@ export class IPv6 implements IPMatch {
     return !this.parts.includes(-1);
   }
   public toString() {
-    return this.parts.map(v => v === -1 ? '*' : v).join('.');
+    return this.parts.map(v => v === -1 ? '*' : v.toString(16)).join(':');
   }
   protected trim(part: string) {
     return part.trim().replace(/^0+/,'').toLowerCase();
