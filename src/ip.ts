@@ -46,11 +46,12 @@ export class IPv4 implements IPMatch {
   }
 }
 
+const IP6_WTN = wildcardToNumber(0xFFFF, 16);
+
 export class IPv6 implements IPMatch {
   public readonly type = 'IPv6';
   public readonly parts: number[];
   public readonly input: string;
-  private WTN = wildcardToNumber(0xFFFF, 16);
   constructor(input: string) {
     input = input.trim();
     this.input = input;
@@ -59,7 +60,7 @@ export class IPv6 implements IPMatch {
     const sides = input.split('::');
     if (sides.length > 2) throw new Error('IPv6 addresses can only contain :: once');
     if (sides.length === 1) {
-      this.parts = sides[0].split(':').map(this.WTN);
+      this.parts = sides[0].split(':').map(IP6_WTN);
     } else {
       const l = sides[0] ? sides[0].split(':') : [];
       const r = sides[1] ? sides[1].split(':') : [];
@@ -67,7 +68,7 @@ export class IPv6 implements IPMatch {
       if (t === 0) throw new Error('This IPv6 address doesn\'t need a ::');
       if (t < 1) throw new Error('Invalid amount of :');
       for (let i = 0; i < t; i += 1) l.push('0');
-      this.parts = l.concat(r).map(this.WTN);
+      this.parts = l.concat(r).map(IP6_WTN);
     }
   }
   public matches(ip: string | IP): boolean {
@@ -169,7 +170,6 @@ function getLowerPart(part: number, bits: number, max: number) {
 }
 function getUpperPart(part: number, bits: number, max: number) {
   if (bits > max) bits = max;
-  if (bits === 0) return 255;
   /* tslint:disable-next-line */
   return part | (Math.pow(2, max - bits) - 1);
 }
@@ -185,8 +185,7 @@ export class IPSubnetwork implements IPMatch {
     }
     let lower = new ((ip as any).constructor)(ip.input) as IP;
     let upper = new ((ip as any).constructor)(ip.input) as IP;
-    const maxPart = ip.type === 'IPv4' ? 255 : 0xFFFF;
-    const bitsPerPart = ip.type === 'IPv4' ? 8 : 32;
+    const bitsPerPart = ip.type === 'IPv4' ? 8 : 16;
     for (let i = 0; i < ip.parts.length; i += 1) {
       lower.parts[i] = getLowerPart(ip.parts[i], bits, bitsPerPart);
       upper.parts[i] = getUpperPart(lower.parts[i], bits, bitsPerPart);
@@ -195,7 +194,7 @@ export class IPSubnetwork implements IPMatch {
     lower = new ((ip as any).constructor)(lower.toString());
     upper = new ((ip as any).constructor)(upper.toString());
     this.range = new IPRange(lower, upper);
-    this.input = `${lower}/${bits}`;
+    this.input = `${lower}/${this.bits}`;
   }
   public matches(ip: string | IP) {
     return this.range.matches(ip);
