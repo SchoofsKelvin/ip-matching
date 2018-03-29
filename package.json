@@ -1,6 +1,6 @@
 {
   "name": "ip-matching",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "lib/index.js",
   "description": "See whether an IPv4 or IPv6 address matches an IP (range) or subnetwork",
   "dependencies": {},
