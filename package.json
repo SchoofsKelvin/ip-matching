@@ -1,11 +1,12 @@
 {
   "name": "ip-matching",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "lib/index.js",
   "description": "See whether an IPv4 or IPv6 address matches an IP (range) or subnetwork",
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^9.6.0",
+    "ts-node": "^5.0.1",
     "typescript": "^2.7.2"
   },
   "scripts": {

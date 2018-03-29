@@ -145,17 +145,18 @@ export class IPRange implements IPMatch {
 function getLowerPart(part: number, bits: number, max: number) {
   if (bits > max) bits = max;
   /* tslint:disable-next-line */
-  return part & ((Math.pow(2, max)-1) ^ (Math.pow(2, bits)-1));
+  return part & (Math.pow(2, max) - Math.pow(2, max - bits));
 }
 function getUpperPart(part: number, bits: number, max: number) {
   if (bits > max) bits = max;
+  if (bits === 0) return 255;
   /* tslint:disable-next-line */
-  return part | ((Math.pow(2, max)-1) & (Math.pow(2, bits)-1));
+  return part | (Math.pow(2, max - bits) - 1);
 }
 
 export class IPSubnetwork implements IPMatch {
   public readonly type: string = 'IPSubnetwork';
-  public input: string;
+  public readonly input: string;
   protected range: IPRange;
   constructor(ip: IP, public readonly bits: number) {
     this.input = `${ip}/${bits}`;
@@ -163,15 +164,17 @@ export class IPSubnetwork implements IPMatch {
     if (bits < 1  || bits > maxBits) {
       throw new Error(`A ${ip.type} subnetwork's bits should be in the range of 1-${maxBits}`);
     }
-    const lower = new ((ip as any).constructor)(ip.input) as IP;
-    const upper = new ((ip as any).constructor)(ip.input) as IP;
+    let lower = new ((ip as any).constructor)(ip.input) as IP;
+    let upper = new ((ip as any).constructor)(ip.input) as IP;
     const maxPart = ip.type === 'IPv4' ? 255 : 0xFFFF;
     const bitsPerPart = ip.type === 'IPv4' ? 8 : 32;
-    for (let i = lower.parts.length - 1; i >= 0 && bits > 0; i -= 1) {
+    for (let i = 0; i < ip.parts.length; i += 1) {
       lower.parts[i] = getLowerPart(ip.parts[i], bits, bitsPerPart);
-      upper.parts[i] = getUpperPart(ip.parts[i], bits, bitsPerPart);
-      bits -= bitsPerPart;
+      upper.parts[i] = getUpperPart(lower.parts[i], bits, bitsPerPart);
+      bits = bits <= bitsPerPart ? 0 : bits - bitsPerPart;
     }
+    lower = new ((ip as any).constructor)(lower.toString());
+    upper = new ((ip as any).constructor)(upper.toString());
     this.range = new IPRange(lower, upper);
   }
   public matches(ip: string | IP) {
