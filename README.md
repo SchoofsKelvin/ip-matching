@@ -70,5 +70,5 @@ console.log('Seems like the demo/testing works fine');
     * IPv6: `2001::/64`
 
 ### Links
-GitHub: https://github.com/SchoofsKelvin/ip-matching
-NPM: https://www.npmjs.com/package/ip-matching
+* GitHub: https://github.com/SchoofsKelvin/ip-matching
+* NPM: https://www.npmjs.com/package/ip-matching
