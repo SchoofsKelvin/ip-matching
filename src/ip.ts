@@ -230,7 +230,7 @@ export class IPMatch {
       return new IPSubnetwork(ip, bits);
     }
 
-    throw new Error('Invalid IP (range)');
+    throw new Error('Invalid IP (range/subnetwork)');
   }
   public matches(ip: string | IP): boolean {
     let real: IP | null;
