@@ -1,6 +1,8 @@
 
 const IP4_REGEX = /^(\d{1,3}\.|\*\.){3}(\d{1,3}|\*)$/;
-const IP6_REGEX = /^((([a-f\d]{1,4}|\*)::?)+([a-f\d]{1,4}|\*)|:(:[a-f\d]{1,4}|:\*)+|([a-f\d]{1,4}:|\*:)+:)$/i;
+// https://regexr.com/5e5i7
+const IP6_REGEX = /^((([a-f\d]{1,4}|\*)::?)+([a-f\d]{1,4}|\*)|:(:[a-f\d]{1,4}|:\*)+|([a-f\d]{1,4}:|\*:)+:|::)$/i;
+const IP6_MIXED_REGEX = /(.*):((?:\d{1,3}\.|\*\.){3}(\d{1,3}|\*))$/
 
 function wildcardToNumber(max: number, radix: number = 10) {
   return (input: string | number) => {
@@ -106,6 +108,12 @@ function shortenIPv6(address: string | string[] | IPv6): string {
   return address.join(':').replace(/(^:|:$)/, '::');
 }
 
+let MIXED_ADDRESS_RANGES: () => IPMatch[] = () => (MIXED_ADDRESS_RANGES = () => [
+  getMatch('::ffff:*:*'), // https://tools.ietf.org/html/draft-ietf-behave-translator-addressing-00#section-3.2.1
+  getMatch('::ffff:0:*:*'), // https://tools.ietf.org/html/draft-ietf-behave-translator-addressing-00#section-3.2.2
+  // Also ::*:* but got deprecated, and would also conflict with e.g. ::1
+])();
+
 export class IPv6 extends IPMatch {
   public readonly type = 'IPv6';
   public readonly parts: number[];
@@ -114,8 +122,17 @@ export class IPv6 extends IPMatch {
     super(null);
     input = input.trim();
     this.input = input;
-    const ip = input.match(IP6_REGEX);
-    if (!ip) throw new Error('Invalid input for IPv6');
+    const mixed = input.match(IP6_MIXED_REGEX);
+    if (mixed) {
+      if (mixed[2].includes('*')) throw new Error('Mixed IPv6 address cannot contain wildcards in IPv4 part');
+      const { parts: ipv4 } = new IPv4(mixed[2]);
+      this.parts = [
+        ...new IPv6(`${mixed[1]}:0:0`).parts.slice(0, 6),
+        (ipv4[0] << 8) + ipv4[1], (ipv4[2] << 8) + ipv4[3],
+      ]
+      return;
+    }
+    if (!IP6_REGEX.test(input) && !IP6_MIXED_REGEX.test(input)) throw new Error('Invalid input for IPv6');
     const sides = input.split('::');
     if (sides.length > 2) throw new Error('IPv6 addresses can only contain :: once');
     if (sides.length === 1) {
@@ -177,6 +194,7 @@ export class IPv6 extends IPMatch {
     return `${shorten}:${ipv4.join('.')}`;
   }
   public toString() {
+    if (MIXED_ADDRESS_RANGES().some(m => m.matches(this))) return this.toMixedString();
     return shortenIPv6(this.toHextets());
   }
 }
