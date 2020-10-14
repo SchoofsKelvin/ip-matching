@@ -13,10 +13,48 @@ function wildcardToNumber(max: number, radix: number = 10) {
   };
 }
 
-export class IPv4 implements IPMatch {
+export function getMatch(input: string | IPMatch): IPMatch {
+  if (input instanceof IPMatch) return input;
+  input = `${input}`; // If it somehow isn't a string yet, make it one
+  let ip = getIP(input);
+  if (ip) return ip;
+  let split = input.split('-');
+  if (split.length !== 1) {
+    if (split.length !== 2) throw new Error('A range looks like \'IP-IP\'');
+    const l = getIP(split[0]);
+    if (!l || !l.exact()) throw new Error('Left side of the IP range isn\'t a valid IP');
+    const r = getIP(split[1]);
+    if (!r || !r.exact()) throw new Error('Right side of the IP range isn\'t a valid IP');
+    if (l.type !== r.type) throw new Error('Expected same type of IP on both sides of range');
+    return new IPRange(l, r);
+  }
+  split = input.split('/');
+  if (split.length !== 1) {
+    ip = getIP(split[0]);
+    if (!ip || !ip.exact()) throw new Error('Expected a valid IP for a subnetwork');
+    const bits = Number(split[1]);
+    if (!bits) throw new Error('A subnetwork looks like \'IP/bits\'');
+    return new IPSubnetwork(ip, bits);
+  }
+  throw new Error('Invalid IP (range/subnetwork)');
+}
+
+export abstract class IPMatch {
+  public readonly type!: string;
+  /**
+   * @deprecated Use `getMatch(input: string)` instead.
+   */
+  protected constructor(public readonly input: string | null) {
+    if (input == null) return this;
+    return getMatch(input);
+  }
+  public abstract matches(ip: string | IP): boolean;
+  public abstract matches(ip: string | IP): boolean;
+export class IPv4 extends IPMatch {
   public readonly type = 'IPv4';
   public readonly parts: number[];
   constructor(public readonly input: string) {
+    super(null);
     this.input = input.trim();
     const ip = input.match(IP4_REGEX);
     if (!ip) throw new Error('Invalid input for IPv4');
@@ -48,11 +86,12 @@ export class IPv4 implements IPMatch {
 
 const IP6_WTN = wildcardToNumber(0xFFFF, 16);
 
-export class IPv6 implements IPMatch {
+export class IPv6 extends IPMatch {
   public readonly type = 'IPv6';
   public readonly parts: number[];
   public readonly input: string;
   constructor(input: string) {
+    super(null);
     input = input.trim();
     this.input = input;
     const ip = input.match(IP6_REGEX);
@@ -118,19 +157,18 @@ export class IPv6 implements IPMatch {
 
 export type IP = IPv4 | IPv6;
 
-function getIP(input: string) {
+export function getIP(input: string): IP | null {
   input = input.trim();
-  let m = input.match(IP4_REGEX);
-  if (m) return new IPv4(input);
-  m = input.match(IP6_REGEX);
-  if (m) return new IPv6(input);
+  if (IP4_REGEX.test(input)) return new IPv4(input);
+  if (IP6_REGEX.test(input) || IP6_MIXED_REGEX.test(input)) return new IPv6(input);
   return null;
 }
 
-export class IPRange implements IPMatch {
+export class IPRange extends IPMatch {
   public readonly type = 'IPRange';
   public input: string;
   constructor(private left: IP, private right: IP) {
+    super(null);
     if (left.type !== right.type) throw new Error('Expected same type of IP on both sides of range');
     if (!this.isLowerOrEqual(left, right)) throw new Error('Left side of range should be lower than right side');
     this.input = left + '-' + right;
@@ -174,13 +212,13 @@ function getUpperPart(part: number, bits: number, max: number) {
   return part | (Math.pow(2, max - bits) - 1);
 }
 
-export class IPSubnetwork implements IPMatch {
-  public readonly type: string = 'IPSubnetwork';
+export class IPSubnetwork extends IPMatch {
   public readonly input: string;
   protected range: IPRange;
   constructor(ip: IP, public readonly bits: number) {
+    super(null);
     const maxBits = (ip.type === 'IPv4' ? 32 : 128);
-    if (bits < 1  || bits > maxBits) {
+    if (bits < 1 || bits > maxBits) {
       throw new Error(`A ${ip.type} subnetwork's bits should be in the range of 1-${maxBits}`);
     }
     let lower = new ((ip as any).constructor)(ip.input) as IP;
@@ -201,45 +239,5 @@ export class IPSubnetwork implements IPMatch {
   }
   public toString() {
     return this.input;
-  }
-}
-
-export class IPMatch {
-  public readonly type: string = 'IPMatch';
-  constructor(public readonly input: any) {
-    if (input instanceof IPMatch) return input;
-    input = `${input}`;
-    let ip = getIP(input);
-    if (ip) return ip;
-    let split = input.split('-');
-    if (split.length !== 1) {
-      if (split.length !== 2) throw new Error('A range looks like \'IP-IP\'');
-      const l = getIP(split[0]);
-      if (!l || !l.exact()) throw new Error('Left side of the IP range isn\'t a valid IP');
-      const r = getIP(split[1]);
-      if (!r || !r.exact()) throw new Error('Right side of the IP range isn\'t a valid IP');
-      if (l.type !== r.type) throw new Error('Expected same type of IP on both sides of range');
-      return new IPRange(l, r);
-    }
-    split = input.split('/');
-    if (split.length !== 1) {
-      ip = getIP(split[0]);
-      if (!ip || !ip.exact()) throw new Error('Expected a valid IP for a subnetwork');
-      const bits = Number(split[1]);
-      if (!bits) throw new Error('A subnetwork looks like \'IP/bits\'');
-      return new IPSubnetwork(ip, bits);
-    }
-
-    throw new Error('Invalid IP (range/subnetwork)');
-  }
-  public matches(ip: string | IP): boolean {
-    let real: IP | null;
-    if (!(ip instanceof IPv4 || ip instanceof IPv6)) {
-      real = getIP(ip);
-    } else {
-      real = ip as any;
-    }
-    if (!real) throw new Error('The given value is not a valid IP');
-    throw new Error('Not implemented');
   }
 }
