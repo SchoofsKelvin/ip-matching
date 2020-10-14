@@ -257,6 +257,7 @@ function getUpperPart(part: number, bits: number, max: number) {
 }
 
 export class IPSubnetwork extends IPMatch {
+  public readonly type = 'IPSubnetwork';
   public readonly input: string;
   protected range: IPRange;
   constructor(ip: IP, public readonly bits: number) {
