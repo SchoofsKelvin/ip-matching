@@ -10,9 +10,9 @@
     "typescript": "3.9"
   },
   "scripts": {
-    "start": "node lib/index.js",
     "compile": "tsc",
-    "test": "node -r source-map-support/register lib/test.js"
+    "test": "node -r source-map-support/register lib/test.js",
+    "prepublishOnly": "node lib/test.js"
   },
   "author": {
     "name": "Kelvin Schoofs",
