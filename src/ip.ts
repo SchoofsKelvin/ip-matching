@@ -15,11 +15,19 @@ function wildcardToNumber(max: number, radix: number = 10) {
   };
 }
 
+/**
+ * Converts a string to an IPMatch object. This correspondends either to
+ * an IPv4, IPv4, IPRange or IPSubnetwork object, all extending the IPMatch class.
+ * For ease-of-use, if the given input is an IPMatch object, that object itself is returned.
+ * @param input The input string to convert, or IPMatch object to return.
+ * @returns Returns an IPMatch for the given string (or returns the given IPMatch itself)
+ */
 export function getMatch(input: string | IPMatch): IPMatch {
   if (input instanceof IPMatch) return input;
   input = `${input}`; // If it somehow isn't a string yet, make it one
   let ip = getIP(input);
   if (ip) return ip;
+  // Check if it's a range, aka `IP1-IP2` with IP1 and IP2 being both a IPv4 or both a IPv6.
   let split = input.split('-');
   if (split.length !== 1) {
     if (split.length !== 2) throw new Error('A range looks like \'IP-IP\'');
@@ -30,6 +38,8 @@ export function getMatch(input: string | IPMatch): IPMatch {
     if (l.type !== r.type) throw new Error('Expected same type of IP on both sides of range');
     return new IPRange(l, r);
   }
+  // Check if it's a subnetwork, aka 'IP/mask' with IP being an IPv4/IPv6 and mask being a number.
+  // The IPSubnetwork constructor will check if the mask is within range (1-32 for IPv4, 1-128 for IPv6)
   split = input.split('/');
   if (split.length !== 1) {
     ip = getIP(split[0]);
@@ -41,17 +51,34 @@ export function getMatch(input: string | IPMatch): IPMatch {
   throw new Error('Invalid IP (range/subnetwork)');
 }
 
+/**
+ * Superclass of the IPv4, IPv6, IPRange and IPSubnetwork classes.
+ * Only specifies a generic .matches() function and .type field.
+ * Check the specific classes for more specialized methods, e.g. the 
+ */
 export abstract class IPMatch {
   public readonly type!: string;
   /**
+   * This used to be the generic way of converting a string to an IPRange/IPv4/... without assuming a type.
+   * This class is now made abstract with a protected constructor, in favor of the new `getMatch(input)` function.
+   * The abstract/deprecated/protected flag are to warn users about switching over to the new function.
+   * With the way TypeScript compiles them to JavaScript, this constructor still works (thus compatible with old code)
    * @deprecated Use `getMatch(input: string)` instead.
    */
   protected constructor(public readonly input: string | null) {
     if (input == null) return this;
     return getMatch(input);
   }
+  /**
+   * Checks whether the given IP (or string to be first converted to an IP) matches this IPMatch object.
+   * The exact way this is checked is specific to each IPv4/IPRange/... class. Check their documentation.
+   */
   public abstract matches(ip: string | IP): boolean;
+  /** Each subclass formats itself in a specific way. IPv6 also has a bunch of extra string methods. Check their documentation */
   public abstract matches(ip: string | IP): boolean;
+}
+
+/** Represents an IPv4 address, optionall with wildcards */
 export class IPv4 extends IPMatch {
   public readonly type = 'IPv4';
   public readonly parts: number[];
@@ -62,6 +89,14 @@ export class IPv4 extends IPMatch {
     if (!ip) throw new Error('Invalid input for IPv4');
     this.parts = input.split('.').map(wildcardToNumber(255));
   }
+  /**
+   * Checks whether the given IP (or string to be first converted to an IP) matches this IPv4 object.
+   * - If the given string represents an IPv6 address, this method returns false.
+   * - In other cases, for an IPv4, we check if all 4 octets match.
+   * - Octets that are wildcards in this object are always assumed to match.
+   * - Octets that are wildcards in the input are **NOT** seen as a wildcard, e.g.
+   *    `10.0.0.*` matches `10.0.0.3`, but the inverse would give false.
+   */
   public matches(ip: string | IP): boolean {
     let real: IP | null;
     if (!(ip instanceof IPv4 || ip instanceof IPv6)) {
@@ -78,9 +113,14 @@ export class IPv4 extends IPMatch {
     }
     return true;
   }
+  /** Returns whether this IPv4 is exact (aka contains no wildcards) */
   public exact() {
     return !this.parts.includes(-1);
   }
+  /**
+   * Returns this IPv4 in dot-decimal/quat-dotted notation. Wildcards are represented as stars.
+   * For example: `"10.*.0.*"`
+   */
   public toString() {
     return this.parts.map(v => v === -1 ? '*' : v).join('.');
   }
@@ -108,12 +148,14 @@ function shortenIPv6(address: string | string[] | IPv6): string {
   return address.join(':').replace(/(^:|:$)/, '::');
 }
 
+/** Lazy wait-until-all-classes-are-available loading the ranges for mixed IPv6 formats, e.g. '::ffff:10.0.0.1' */
 let MIXED_ADDRESS_RANGES: () => IPMatch[] = () => (MIXED_ADDRESS_RANGES = () => [
   getMatch('::ffff:*:*'), // https://tools.ietf.org/html/draft-ietf-behave-translator-addressing-00#section-3.2.1
   getMatch('::ffff:0:*:*'), // https://tools.ietf.org/html/draft-ietf-behave-translator-addressing-00#section-3.2.2
   // Also ::*:* but got deprecated, and would also conflict with e.g. ::1
 ])();
 
+/** Represents an IPv6 address, optionall with wildcards */
 export class IPv6 extends IPMatch {
   public readonly type = 'IPv6';
   public readonly parts: number[];
@@ -147,6 +189,14 @@ export class IPv6 extends IPMatch {
       this.parts = l.concat(r).map(IP6_WTN);
     }
   }
+  /**
+   * Checks whether the given IP (or string to be first converted to an IP) matches this IPv6 object.
+   * - If the given string represents an IPv4 address, this method returns false.
+   * - In other cases, for an IPv6, we check if all 8 hextets/hexadectets match.
+   * - Octets that are wildcards in this object are always assumed to match.
+   * - Octets that are wildcards in the input are **NOT** seen as a wildcard, e.g.
+   *    `2001::abcd:*` matches `2001::abcd:1`, but the inverse would give false.
+   */
   public matches(ip: string | IP): boolean {
     let real: IP | null;
     if (!(ip instanceof IPv4 || ip instanceof IPv6)) {
@@ -163,18 +213,31 @@ export class IPv6 extends IPMatch {
     }
     return true;
   }
+  /** Returns whether this IPv4 is exact (aka contains no wildcards) */
   public exact() {
     return !this.parts.includes(-1);
   }
+  /** Returns an array with the 8 hextets of this address, or `"*"` for wildcard hextets */
   public toHextets() {
     return this.parts.map(v => v === -1 ? '*' : v.toString(16));
   }
+  /**
+   * Returns the address in the full format, but with leading zeroes of hextets omitted.
+   * Hextets representing wildcards will be shown as `"*"` instead.
+   * Example result: `"2001:0:0:0:0:0:abc:1"`
+   */
   public toLongString() {
     return this.toHextets().join(':');
   }
+  /**
+   * Returns the address in the full format, but without omitting leading zeroes or hextets.
+   * Hextets representing wildcards will be shown as `"*"` instead.
+   * Example result: `"2001:0000:0000:0000:0000:0000:0abc:0001"`
+   */
   public toFullString() {
     return this.toHextets().map(v => v !== '*' && v.length < 4 ? `${'0'.repeat(4 - v.length)}${v}` : v).join(':');
-    }
+  }
+  /** Returns a mixed address (32 last bits representing an IPv4 address) in a mixed format e.g. "::ffff:c000:0280" as "::ffff:192.0.2.128" */
   public toMixedString() {
     const { parts } = this;
     // Prepare the first part
@@ -193,6 +256,15 @@ export class IPv6 extends IPMatch {
     // And slap them together
     return `${shorten}:${ipv4.join('.')}`;
   }
+  /**
+   * Returns the address in the shortest possible format, according to RFC 5952:
+   * - All hexadecimal digits are lowercase (if applicable), as is the case with .toLongString(), toFullString(), ...
+   * - Leading zeroes of each hextet are suppressed, apart from the all-zero field which is rendered as a single zero
+   * - The (leftmost) longest sequence of multiple consecutive all-zero hextets is replaced with "::"
+   * - If this address is known to be IPv4 mapped, it is displayed as such, which currently are for e.g. 127.0.0.1:
+   *    - `"::ffff:127.0.0.1"`
+   *    - `"::ffff:0:127.0.0.1"`
+   */
   public toString() {
     if (MIXED_ADDRESS_RANGES().some(m => m.matches(this))) return this.toMixedString();
     return shortenIPv6(this.toHextets());
@@ -201,6 +273,10 @@ export class IPv6 extends IPMatch {
 
 export type IP = IPv4 | IPv6;
 
+/**
+ * Tries to convert the given input string to an IP, aka an IPv4 or IPv6 object.
+ * @throws Errors if the given input format matches an IPv4/IPv6 address well enough, but is still invalid.
+ */
 export function getIP(input: string): IP | null {
   input = input.trim();
   if (IP4_REGEX.test(input)) return new IPv4(input);
@@ -208,15 +284,18 @@ export function getIP(input: string): IP | null {
   return null;
 }
 
+/** Represents a range of IP addresses, according to their numerical value */
 export class IPRange extends IPMatch {
   public readonly type = 'IPRange';
   public input: string;
+  /** Both values should be the same type (IPv4 or IPv6) and `left` should be lower in numeric value than `right` */
   constructor(private left: IP, private right: IP) {
     super(null);
     if (left.type !== right.type) throw new Error('Expected same type of IP on both sides of range');
     if (!this.isLowerOrEqual(left, right)) throw new Error('Left side of range should be lower than right side');
     this.input = left + '-' + right;
   }
+  /** Checks whether the given IP lies in the range defined by the two bounds (inclusive) */
   public matches(ip: string | IP): boolean {
     let real: IP | null;
     if (!(ip instanceof IPv4 || ip instanceof IPv6)) {
@@ -228,6 +307,7 @@ export class IPRange extends IPMatch {
     if (real.type !== this.left.type) throw new Error('Expected same type of IP as used to construct the range');
     return this.isLowerOrEqual(this.left, real) && this.isLowerOrEqual(real, this.right);
   }
+  /** Converts this IPRange to a string, by joining the two bounds with a dash, e.g. "IP1-IP2" */
   public toString() {
     return this.input;
   }
@@ -247,19 +327,19 @@ export class IPRange extends IPMatch {
 
 function getLowerPart(part: number, bits: number, max: number) {
   if (bits > max) bits = max;
-  /* tslint:disable-next-line */
   return part & (Math.pow(2, max) - Math.pow(2, max - bits));
 }
 function getUpperPart(part: number, bits: number, max: number) {
   if (bits > max) bits = max;
-  /* tslint:disable-next-line */
   return part | (Math.pow(2, max - bits) - 1);
 }
 
+/** Represents a subnetwork. The combination of an IP and a (simple) mask */
 export class IPSubnetwork extends IPMatch {
   public readonly type = 'IPSubnetwork';
   public readonly input: string;
   protected range: IPRange;
+  /** Bits has to be in the range 1-32 for IPv4 and 1-128 for IPv6 */
   constructor(ip: IP, public readonly bits: number) {
     super(null);
     const maxBits = (ip.type === 'IPv4' ? 32 : 128);
@@ -279,9 +359,11 @@ export class IPSubnetwork extends IPMatch {
     this.range = new IPRange(lower, upper);
     this.input = `${lower}/${this.bits}`;
   }
+  /** Checks whether the given IP lies in this subnetwork */
   public matches(ip: string | IP) {
     return this.range.matches(ip);
   }
+  /** Converts this IPSubnetwork to a string, by joining the IP and mask with a slash, e.g. "IP/mask" */
   public toString() {
     return this.input;
   }
