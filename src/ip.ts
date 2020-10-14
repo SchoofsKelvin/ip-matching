@@ -86,6 +86,26 @@ export class IPv4 extends IPMatch {
 
 const IP6_WTN = wildcardToNumber(0xFFFF, 16);
 
+function shortenIPv6(address: string | string[] | IPv6): string {
+  if (typeof address === 'string') address = new IPv6(address);
+  if (address instanceof IPv6) address = address.toHextets();
+  const score = [0, 0, 0, 0, 0, 0, 0, 0];
+  const { length } = address;
+  for (let i = 0; i < length; i += 1) {
+    for (let j = i; j < length; j += 1) {
+      if (address[j] === '0') score[i] += 1; else break;
+    }
+  }
+  const best = score.reduce((prev, s, key) => s > score[prev] ? key : prev, 0);
+  if (score[best]) {
+    address.splice(best, score[best] - 1);
+    address[best] = '';
+  }
+  // '::' results in address being ['']
+  if (address.length === 1 && !address[0]) return '::';
+  return address.join(':').replace(/(^:|:$)/, '::');
+}
+
 export class IPv6 extends IPMatch {
   public readonly type = 'IPv6';
   public readonly parts: number[];
@@ -135,23 +155,29 @@ export class IPv6 extends IPMatch {
   public toLongString() {
     return this.toHextets().join(':');
   }
-  public toString() {
-    const hextets = this.toHextets();
-    const score = [0,0,0,0,0,0,0,0];
-    for (let i = 0; i < 8; i += 1) {
-      for (let j = i; j < 8; j += 1) {
-        if (hextets[j] === '0') score[i] += 1; else break;
-      }
+  public toFullString() {
+    return this.toHextets().map(v => v !== '*' && v.length < 4 ? `${'0'.repeat(4 - v.length)}${v}` : v).join(':');
     }
-    const best = score.reduce((prev, s, key) => s > score[prev] ? key : prev, 0);
-    if (score[best]) {
-      hextets.splice(best, score[best] - 1);
-      hextets[best] = '';
-    }
-    return hextets.join(':').replace(/(^:|:$)/, '::');
+  public toMixedString() {
+    const { parts } = this;
+    // Prepare the first part
+    const hextets = parts.slice(0, 6).map(v => v === -1 ? '*' : v.toString(16));
+    let shorten = shortenIPv6(hextets);
+    if (shorten === '::') shorten = ':';
+    // Prepare the second part
+    const ipv4: (number | string)[] = [
+      parts[6] >> 8,
+      parts[6] & 0xFF,
+      parts[7] >> 8,
+      parts[7] & 0xFF,
+    ];
+    if (parts[6] === -1) ipv4[0] = ipv4[1] = '*';
+    if (parts[7] === -1) ipv4[2] = ipv4[3] = '*';
+    // And slap them together
+    return `${shorten}:${ipv4.join('.')}`;
   }
-  protected trim(part: string) {
-    return part.trim().replace(/^0+/,'').toLowerCase();
+  public toString() {
+    return shortenIPv6(this.toHextets());
   }
 }
 
