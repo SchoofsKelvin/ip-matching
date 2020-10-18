@@ -94,6 +94,7 @@ assert(!mySubnet.matches('FEFE::2:bbbb')); // false
   assert(new IPv6('a:0:0::B:0:C').toFullString() === '000a:0000:0000:0000:0000:000b:0000:000c');
   assert(new IPv6('::ffff:a9db:d85').toMixedString() === '::ffff:169.219.13.133');
   assert(new IPv6('::ffff:a9db:*').toMixedString() === '::ffff:169.219.*.*');
+  assert(new IPv6('a::10.0.0.0').toMixedString() === 'a::10.0.0.0');
   assert(JSON.stringify(new IPv6('a:0:*::B:0:C').toHextets()) === '["a","0","*","0","0","b","0","c"]');
 
   // IPRange/IPSubnetwork use the shortened .toString() for IPv6:

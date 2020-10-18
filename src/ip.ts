@@ -243,7 +243,7 @@ export class IPv6 extends IPMatch {
     // Prepare the first part
     const hextets = parts.slice(0, 6).map(v => v === -1 ? '*' : v.toString(16));
     let shorten = shortenIPv6(hextets);
-    if (shorten === '::') shorten = ':';
+    if (shorten.endsWith('::')) shorten = shorten.substring(0, shorten.length - 1);
     // Prepare the second part
     const ipv4: (number | string)[] = [
       parts[6] >> 8,
