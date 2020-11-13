@@ -1,6 +1,5 @@
 
-import { IPMatch, IPSubnetwork, IPv4, IPv6, matches } from '.';
-import { getMatch } from './ip';
+import { getMatch, IPMatch, IPSubnetwork, IPv4, IPv6, matches } from '.';
 
 const assert = (b: any) => { if (!b) throw new Error('oops'); };
 
@@ -13,7 +12,7 @@ assert(!matches('abc::def', 'abc:9::def')); // false
 assert(matches('0001:2:3:4:5:6:7', '1:2:3:4:5:6:7')); // true
 
 // getMatch returns an instance of
-// IPv4, IPv6, IPRange or IPSubnetwork, all extending IPMatch
+// IPv4, IPv6, IPRange, IPSubnetwork or IPMask, all extending IPMatch
 const mySubnet = getMatch('fefe::0001:abcd/112');
 assert(mySubnet.type === 'IPSubnetwork'); // 'IPSubnetwork'
 assert(mySubnet instanceof IPSubnetwork); // true
@@ -52,6 +51,16 @@ assert(!mySubnet.matches('FEFE::2:bbbb')); // false
   assert(!subnet.matches('10.21.0.0')); // false
   assert(!subnet.matches('10.21.30.40')); // false
   assert(!subnet.matches('10.5.5.5')); // false
+
+  const mask = getMatch('10.20.130.40/255.0.128.0'); // returns an IPMask
+  assert(mask.toString() === '10.0.128.0/255.0.128.0');
+  assert(mask.matches('10.20.130.40')); // true
+  assert(mask.matches('10.30.130.50')); // true
+  assert(mask.matches('10.20.150.50')); // true
+  assert(!mask.matches('10.20.10.50')); // false
+  assert(mask.matches('10.20.255.255')); // true
+  assert(mask.matches('10.50.130.50')); // true
+  assert(!mask.matches('11.50.130.50')); // false
 }
 
 /* IPv6 */
@@ -84,6 +93,15 @@ assert(!mySubnet.matches('FEFE::2:bbbb')); // false
   assert(!subnet.matches('a:b:c:cfff::')); // false
   assert(!subnet.matches('c::')); // false
 
+  const mask = getMatch('a:b:cccc:d::/ffff:0:ff00:0::'); // returns an IPMask
+  assert(mask.toString() === 'a:0:cc00::/ffff:0:ff00::');
+  assert(mask.matches('a:0:cc00::')); // true
+  assert(mask.matches('a:0:cc00::1')); // true
+  assert(mask.matches('a:0:ccdd::')); // true
+  assert(!mask.matches('a::')); // false
+  assert(!mask.matches('a:0:dd00::')); // false
+  assert(!mask.matches('b:0:cc00::')); // false
+
   /** String representations */
 
   // toString() for IPv6 produces the shortest possible address
@@ -99,6 +117,8 @@ assert(!mySubnet.matches('FEFE::2:bbbb')); // false
 
   // IPRange/IPSubnetwork use the shortened .toString() for IPv6:
   assert(getMatch('a::bc:1234/112').toString() === 'a::bc:0/112');
+  // IPMask also uses the shortened .toString() for IPv6:
+  assert(getMatch('a::abbc:1234/ffff::ff80:000f').toString() === 'a::ab80:4/ffff::ff80:f');
 
   // Super short notation of IPv6 unspecified address
   assert(new IPv6('::').toString() === '::');

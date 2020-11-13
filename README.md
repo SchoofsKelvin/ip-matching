@@ -1,7 +1,7 @@
 
 # IP-Matching
 
-Quick and easy-to-use checking whether an IP belongs to a range, subnetwork or IP with wildcards.
+Quick and easy-to-use checking whether an IP belongs to a range, subnetwork, mask or IP with wildcards.
 
 The IPv6 class also comes with a few handy methods to convert it to several string representations.
 
@@ -16,7 +16,7 @@ Comes with its own TypeScript declarations with included documentation.
 
 ### Example
 ```ts
-import { IPMatch, IPSubnetwork, matches } from 'ip-matching';
+import { getMatch, IPMatch, IPSubnetwork, matches } from 'ip-matching';
 
 // matches(ip: string | IP, target: string | IPMatch): boolean;
 
@@ -27,7 +27,7 @@ assert(!matches('abc::def', 'abc:9::def')); // false
 assert(matches('0001:2:3:4:5:6:7', '1:2:3:4:5:6:7')); // true
 
 // getMatch returns an instance of
-// IPv4, IPv6, IPRange or IPSubnetwork, all extending IPMatch
+// IPv4, IPv6, IPRange, IPSubnetwork or IPMask, all extending IPMatch
 const mySubnet = getMatch('fefe::0001:abcd/112');
 assert(mySubnet.type === 'IPSubnetwork'); // 'IPSubnetwork'
 assert(mySubnet instanceof IPSubnetwork); // true
@@ -41,10 +41,11 @@ assert(new IPv6('a:0:0::B:0:C').toFullString() === '000a:0000:0000:0000:0000:000
 assert(new IPv6('::ffff:a9db:*').toMixedString() === '::ffff:169.219.*.*');
 
 assert(getMatch('a::bc:1234/112').toString() === 'a::bc:0/112');
+assert(getMatch('a::abbc:1234/ffff::ff80:000f').toString() === 'a::ab80:4/ffff::ff80:f');
 ```
 ***Note**: The `matches` function and all constructors error for invalid inputs*
 
-You can take a look at the [test code](https://github.com/SchoofsKelvin/ip-matching/blob/master/src/test.ts) for a quick overview of formats IPMatch/matches accepts.
+You can take a look at the [test code](https://github.com/SchoofsKelvin/ip-matching/blob/master/src/ip.test.ts) for a demonstration of all the features.
 
 ### Allowed patterns
 * IP (IPv4/IPv6)
@@ -62,6 +63,11 @@ You can take a look at the [test code](https://github.com/SchoofsKelvin/ip-match
 * IP Subnetwork
     * IPv4: `10.0.0.0/16`
     * IPv6: `2001::/64`
+* IP Mask
+    * IPv4: `10.0.0.0/255.0.64.0`
+    * IPv6: `2001:abcd::/ffff:ff8::`
+
+For legacy reasons, IPSubnetwork and IPMask are separate classes, even though the former can be seen as a simplified version of the latter. The IPMask toString() method does not automatically simplify e.g. `/255.0.0.0` to `/8`, even though those are equivalent.
 
 ### Links
 * GitHub: https://github.com/SchoofsKelvin/ip-matching

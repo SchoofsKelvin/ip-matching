@@ -32,9 +32,9 @@ export function getMatch(input: string | IPMatch): IPMatch {
   if (split.length !== 1) {
     if (split.length !== 2) throw new Error('A range looks like \'IP-IP\'');
     const l = getIP(split[0]);
-    if (!l || !l.exact()) throw new Error('Left side of the IP range isn\'t a valid IP');
+    if (!l || !l.exact()) throw new Error('Left side of the IP range isn\'t a valid (exact) IP');
     const r = getIP(split[1]);
-    if (!r || !r.exact()) throw new Error('Right side of the IP range isn\'t a valid IP');
+    if (!r || !r.exact()) throw new Error('Right side of the IP range isn\'t a valid (exact) IP');
     if (l.type !== r.type) throw new Error('Expected same type of IP on both sides of range');
     return new IPRange(l, r);
   }
@@ -43,10 +43,12 @@ export function getMatch(input: string | IPMatch): IPMatch {
   split = input.split('/');
   if (split.length !== 1) {
     ip = getIP(split[0]);
-    if (!ip || !ip.exact()) throw new Error('Expected a valid IP for a subnetwork');
+    if (!ip || !ip.exact()) throw new Error('Expected a valid (exact) IP for a subnetwork');
     const bits = Number(split[1]);
-    if (!bits) throw new Error('A subnetwork looks like \'IP/bits\'');
-    return new IPSubnetwork(ip, bits);
+    if (bits) return new IPSubnetwork(ip, bits);
+    const mask = getIP(split[1]);
+    if (mask) return new IPMask(ip, mask);
+    throw new Error('A subnetwork or mask looks like \'IP/bits\' or \'IP/mask\' e.g. \'::1/64\' or \'::1/aa::\'');
   }
   throw new Error('Invalid IP (range/subnetwork)');
 }
@@ -63,6 +65,7 @@ export abstract class IPMatch {
    * This class is now made abstract with a protected constructor, in favor of the new `getMatch(input)` function.
    * The abstract/deprecated/protected flag are to warn users about switching over to the new function.
    * With the way TypeScript compiles them to JavaScript, this constructor still works (thus compatible with old code)
+   * @param input The string representation of this IPMatch. Not necessarily the exact input string that generated it
    * @deprecated Use `getMatch(input: string)` instead.
    */
   protected constructor(public readonly input: string | null) {
@@ -122,7 +125,7 @@ export class IPv4 extends IPMatch {
     return match instanceof IPv4 && match.parts.every((v, i) => this.parts[i] === v);
   }
   /** Returns whether this IPv4 is exact (aka contains no wildcards) */
-  public exact() {
+  public exact(): boolean {
     return !this.parts.includes(-1);
   }
   /**
@@ -170,8 +173,7 @@ export class IPv6 extends IPMatch {
   public readonly input: string;
   constructor(input: string) {
     super(null);
-    input = input.trim();
-    this.input = input;
+    this.input = input = input.trim();
     const mixed = input.match(IP6_MIXED_REGEX);
     if (mixed) {
       if (mixed[2].includes('*')) throw new Error('Mixed IPv6 address cannot contain wildcards in IPv4 part');
@@ -225,7 +227,7 @@ export class IPv6 extends IPMatch {
     return match instanceof IPv6 && match.parts.every((v, i) => this.parts[i] === v);
   }
   /** Returns whether this IPv4 is exact (aka contains no wildcards) */
-  public exact() {
+  public exact(): boolean {
     return !this.parts.includes(-1);
   }
   /** Returns an array with the 8 hextets of this address, or `"*"` for wildcard hextets */
@@ -286,9 +288,11 @@ export type IP = IPv4 | IPv6;
 
 /**
  * Tries to convert the given input string to an IP, aka an IPv4 or IPv6 object.
+ * For ease-of-use, if the input is already an IPv4 or IPv6, it is returned.
  * @throws Errors if the given input format matches an IPv4/IPv6 address well enough, but is still invalid.
  */
-export function getIP(input: string): IP | null {
+export function getIP(input: string | IP): IP | null {
+  if (input instanceof IPv4 || input instanceof IPv6) return input;
   input = input.trim();
   if (IP4_REGEX.test(input)) return new IPv4(input);
   if (IP6_REGEX.test(input) || IP6_MIXED_REGEX.test(input)) return new IPv6(input);
@@ -348,7 +352,7 @@ function getUpperPart(part: number, bits: number, max: number) {
   return part | (Math.pow(2, max - bits) - 1);
 }
 
-/** Represents a subnetwork. The combination of an IP and a (simple) mask */
+/** Represents a subnetwork. The combination of an IP and a (simple) mask. A simplified version of IPMask. */
 export class IPSubnetwork extends IPMatch {
   public readonly type = 'IPSubnetwork';
   public readonly input: string;
@@ -381,6 +385,41 @@ export class IPSubnetwork extends IPMatch {
     return match instanceof IPSubnetwork && match.range.equals(this.range);
   }
   /** Converts this IPSubnetwork to a string, by joining the IP and mask with a slash, e.g. "IP/mask" */
+  public toString() {
+    return this.input;
+  }
+}
+
+/** Represents an IP mask. The combination of an IP and a mask. A more complex version of IPSubnetwork. */
+export class IPMask extends IPMatch {
+  public readonly type = 'IPSubnetwork';
+  public readonly input: string;
+  constructor(public readonly ip: IP, public readonly mask: IP) {
+    super(null);
+    if (!ip.exact()) throw new Error(`Base IP of the IPMask isn't a valid (exact) IP`);
+    if (!mask.exact()) throw new Error(`Mask IP of the IPMask isn't a valid (exact) IP`);
+    if (ip.type !== mask.type) throw new Error('Expected same type of IP as base IP and mask IP to construct the mask');
+    const lower = new ((ip as any).constructor)(ip.input) as IP;
+    const maskParts = mask.parts;
+    lower.parts.forEach((p, i) => lower.parts[i] = p & maskParts[i]);
+    this.ip = lower;
+    this.input = `${lower}/${mask}`;
+  }
+  /** Checks whether the given IP matches this mask */
+  public matches(ip: string | IP) {
+    const real = getIP(ip);
+    if (!real) throw new Error('The given value is not a valid IP');
+    if (real.type !== this.ip.type) return false;
+    const { ip: { parts: ipParts }, mask: { parts: maskParts } } = this;
+    return real.parts.every((p, i) => (p & maskParts[i]) === ipParts[i]);
+  }
+  public equals(match: IPMatch): boolean {
+    return match instanceof IPMask && match.ip.equals(this.ip) && match.mask.equals(this.mask);
+  }
+  /**
+   * Converts this IPMask to a string, by joining the IP and mask with a slash, e.g. "IP/mask".
+   * Does simplify the IP and mask in their IP form, but does not simplify e.g. `10.0.0.0/255.0.0.0` to `10.0.0.0/8`.
+   */
   public toString() {
     return this.input;
   }
