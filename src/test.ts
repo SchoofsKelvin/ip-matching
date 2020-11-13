@@ -115,7 +115,37 @@ assert(!mySubnet.matches('FEFE::2:bbbb')); // false
   assert(new IPv6('::ffff:0:0.169.0.0').toString() === '::ffff:0:0.169.0.0');
 }
 
-/** Special cases */
+/* IPMatch.prototype.equals */
+{
+  const matches: IPMatch[] = [
+    getMatch('10.20.30.40'),
+    getMatch('10.20.30.50'),
+    getMatch('10.20.30.40/16'),
+    getMatch('10.20.30.40/24'),
+    getMatch('10.20.30.40/32'),
+    getMatch('10.20.30.40-10.20.30.40'),
+    getMatch('10.20.30.0-10.20.30.255'),
+    getMatch('a::bc:1234'),
+    getMatch('a::bc:5678'),
+    getMatch('a::bc:1234/64'),
+    getMatch('a::bc:1234/112'),
+    getMatch('a::bc:1234/128'),
+    getMatch('a::bc:1234-a::bc:1234'),
+    getMatch('a::bc:0-a::bc:ffff'),
+  ];
+  let failed = false;
+  for (const a of matches) {
+    for (const b of matches) {
+      const eq = a.equals(b);
+      if (eq === (a === b)) continue;
+      console.error(`Matches '${a}' and '${b}' where unexpectedly ${eq ? 'equal' : 'unequal'}`);
+      failed = true;
+    }
+  }
+  if (failed) process.exit(1);
+}
+
+/* Special cases */
 {
   // In version 1.1.0 and earlier, `new IPMatch(input)` was basically what the
   // current `getMatch(input)` is. While TypeScript typing complains we can't

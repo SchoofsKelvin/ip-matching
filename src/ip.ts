@@ -76,6 +76,11 @@ export abstract class IPMatch {
   public abstract matches(ip: string | IP): boolean;
   /** Each subclass formats itself in a specific way. IPv6 also has a bunch of extra string methods. Check their documentation */
   public abstract matches(ip: string | IP): boolean;
+  /**
+   * Checks whether this IPMatch equals the given match. The match type matters, e.g. `10.0.0.0` and `10.0.0.0/32` will
+   * result in this method returning false, even though they both only match `10.0.0.0`.
+   */
+  public abstract equals(match: IPMatch): boolean;
 }
 
 /** Represents an IPv4 address, optionall with wildcards */
@@ -112,6 +117,9 @@ export class IPv4 extends IPMatch {
       if (wanted !== -1 && given !== wanted) return false;
     }
     return true;
+  }
+  public equals(match: IPMatch): boolean {
+    return match instanceof IPv4 && match.parts.every((v, i) => this.parts[i] === v);
   }
   /** Returns whether this IPv4 is exact (aka contains no wildcards) */
   public exact() {
@@ -213,6 +221,9 @@ export class IPv6 extends IPMatch {
     }
     return true;
   }
+  public equals(match: IPMatch): boolean {
+    return match instanceof IPv6 && match.parts.every((v, i) => this.parts[i] === v);
+  }
   /** Returns whether this IPv4 is exact (aka contains no wildcards) */
   public exact() {
     return !this.parts.includes(-1);
@@ -307,6 +318,9 @@ export class IPRange extends IPMatch {
     if (real.type !== this.left.type) throw new Error('Expected same type of IP as used to construct the range');
     return this.isLowerOrEqual(this.left, real) && this.isLowerOrEqual(real, this.right);
   }
+  public equals(match: IPMatch): boolean {
+    return match instanceof IPRange && match.left.equals(this.left) && match.right.equals(this.right);
+  }
   /** Converts this IPRange to a string, by joining the two bounds with a dash, e.g. "IP1-IP2" */
   public toString() {
     return this.input;
@@ -362,6 +376,9 @@ export class IPSubnetwork extends IPMatch {
   /** Checks whether the given IP lies in this subnetwork */
   public matches(ip: string | IP) {
     return this.range.matches(ip);
+  }
+  public equals(match: IPMatch): boolean {
+    return match instanceof IPSubnetwork && match.range.equals(this.range);
   }
   /** Converts this IPSubnetwork to a string, by joining the IP and mask with a slash, e.g. "IP/mask" */
   public toString() {
