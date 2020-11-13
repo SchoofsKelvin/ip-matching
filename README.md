@@ -20,25 +20,27 @@ import { IPMatch, IPSubnetwork, matches } from 'ip-matching';
 
 // matches(ip: string | IP, target: string | IPMatch): boolean;
 
-matches('10.0.0.1', '10.0.0.0/24'); // true
-matches('10.0.1.1', '10.0.0.0/24'); // false
-matches('abc::def', 'abc:*::def'); // true
-matches('abc::def', 'abc:9::def'); // false
+assert(matches('10.0.0.1', '10.0.0.0/24')); // true
+assert(!matches('10.0.1.1', '10.0.0.0/24')); // false
+assert(matches('abc::def', 'abc:*::def')); // true
+assert(!matches('abc::def', 'abc:9::def')); // false
+assert(matches('0001:2:3:4:5:6:7', '1:2:3:4:5:6:7')); // true
 
-// IPMatch constructor actually returns an instance of
-// IPv4, IPv6, IPRange or IPSubnetwork, all extending IPMatch.
-// Could use the constructors for ^ to force user input to be e.g. a subnet.
-const mySubnet = new IPMatch('10.0.5.0/24');
+// getMatch returns an instance of
+// IPv4, IPv6, IPRange or IPSubnetwork, all extending IPMatch
+const mySubnet = getMatch('fefe::0001:abcd/112');
 assert(mySubnet.type === 'IPSubnetwork'); // 'IPSubnetwork'
 assert(mySubnet instanceof IPSubnetwork); // true
 assert(mySubnet instanceof IPMatch); // true
-assert(mySubnet.matches('10.0.5.4')); // true
-assert(!mySubnet.matches('10.0.6.4')); // false
+assert(mySubnet.matches('FEFE::1:bbbb')); // true
+assert(!mySubnet.matches('FEFE::2:bbbb')); // false
 
 assert(new IPv6('a:0:0::B:0:C').toString() === 'a::b:0:c');
 assert(new IPv6('a:0:0::B:0:C').toLongString() === 'a:0:0:0:0:b:0:c');
 assert(new IPv6('a:0:0::B:0:C').toFullString() === '000a:0000:0000:0000:0000:000b:0000:000c');
 assert(new IPv6('::ffff:a9db:*').toMixedString() === '::ffff:169.219.*.*');
+
+assert(getMatch('a::bc:1234/112').toString() === 'a::bc:0/112');
 ```
 ***Note**: The `matches` function and all constructors error for invalid inputs*
 

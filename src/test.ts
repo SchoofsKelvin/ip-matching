@@ -12,7 +12,7 @@ assert(matches('abc::def', 'abc:*::def')); // true
 assert(!matches('abc::def', 'abc:9::def')); // false
 assert(matches('0001:2:3:4:5:6:7', '1:2:3:4:5:6:7')); // true
 
-// IPMatch constructor actually returns an instance of
+// getMatch returns an instance of
 // IPv4, IPv6, IPRange or IPSubnetwork, all extending IPMatch
 const mySubnet = getMatch('fefe::0001:abcd/112');
 assert(mySubnet.type === 'IPSubnetwork'); // 'IPSubnetwork'
