@@ -137,6 +137,19 @@ export class IPv4 extends IPMatch {
   public toString() {
     return this.parts.map(v => v === -1 ? '*' : v).join('.');
   }
+  /** Returns the next address, or undefined for `255.255.255.255` */
+  public getNext(): IP | undefined {
+    const newParts = [...this.parts];
+    for (let i = newParts.length - 1; i >= 0; i++) {
+      if (newParts[i] === 255) {
+        newParts[i] = 0;
+      } else {
+        newParts[i]++;
+        return partsToIP(newParts);
+      }
+    }
+    return undefined;
+  }
 }
 
 const IP6_WTN = wildcardToNumber(0xFFFF, 16);
@@ -284,6 +297,19 @@ export class IPv6 extends IPMatch {
     if (MIXED_ADDRESS_RANGES().some(m => m.matches(this))) return this.toMixedString();
     return shortenIPv6(this.toHextets());
   }
+  /** Returns the next address, or undefined for `ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff` */
+  public getNext(): IP | undefined {
+    const newParts = [...this.parts];
+    for (let i = newParts.length - 1; i >= 0; i--) {
+      if (newParts[i] === 0xFFFF) {
+        newParts[i] = 0;
+      } else {
+        newParts[i]++;
+        return partsToIP(newParts);
+      }
+    }
+    return undefined;
+  }
 }
 
 /** Represents either an IPv4 or an IPv6, aka single addresses */
@@ -300,6 +326,15 @@ export function getIP(input: string | IP): IP | null {
   if (IP4_REGEX.test(input)) return new IPv4(input);
   if (IP6_REGEX.test(input) || IP6_MIXED_REGEX.test(input)) return new IPv6(input);
   return null;
+}
+
+function partsToIP(parts: number[]): IP {
+  if (parts.length !== 4 && parts.length !== 8)
+    throw new Error(`Expected 4 or 8 parts, got ${parts.length} instead`);
+  const ip = parts.length === 4 ? new IPv4('0.0.0.0') : new IPv6('::');
+  Object.assign(ip, { parts });
+  (ip.input as string) = ip.toString();
+  return ip;
 }
 
 /** Represents a range of IP addresses, according to their numerical value */
