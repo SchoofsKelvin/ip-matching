@@ -9,7 +9,7 @@ export * from './ip';
  * @param target The target to check against, or a string to convert to an IPMatch
  * @throws Throws an error if either argument is a string but does not have a correct format
  */
-export function matches(ip: string | IP, target: string | IPMatch) {
+export function matches(ip: string | IP, target: string | IPMatch): boolean {
   const targ = getMatch(target);
   return targ.matches(ip);
 }

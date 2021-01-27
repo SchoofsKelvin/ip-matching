@@ -24,8 +24,7 @@ function wildcardToNumber(max: number, radix: number = 10) {
  */
 export function getMatch(input: string | IPMatch): IPMatch {
   if (input instanceof IPMatch) return input;
-  input = `${input}`; // If it somehow isn't a string yet, make it one
-  let ip = getIP(input);
+  let ip = getIP(`${input}`);
   if (ip) return ip;
   // Check if it's a range, aka `IP1-IP2` with IP1 and IP2 being both a IPv4 or both a IPv6.
   let split = input.split('-');
@@ -80,8 +79,8 @@ export abstract class IPMatch {
   /** Each subclass formats itself in a specific way. IPv6 also has a bunch of extra string methods. Check their documentation */
   public abstract matches(ip: string | IP): boolean;
   /**
-   * Checks whether this IPMatch equals the given match. The match type matters, e.g. `10.0.0.0` and `10.0.0.0/32` will
-   * result in this method returning false, even though they both only match `10.0.0.0`.
+   * Checks whether this IPMatch equals the given match. The match type matters, e.g. the IPv4 `10.0.0.0` and 
+   * the IPSubnetwork `10.0.0.0/32` will result in this method returning false, even though they both only match `10.0.0.0`.
    */
   public abstract equals(match: IPMatch): boolean;
 }
@@ -284,6 +283,7 @@ export class IPv6 extends IPMatch {
   }
 }
 
+/** Represents either an IPv4 or an IPv6, aka single addresses */
 export type IP = IPv4 | IPv6;
 
 /**
@@ -304,7 +304,7 @@ export class IPRange extends IPMatch {
   public readonly type = 'IPRange';
   public input: string;
   /** Both values should be the same type (IPv4 or IPv6) and `left` should be lower in numeric value than `right` */
-  constructor(private left: IP, private right: IP) {
+  constructor(public readonly left: IP, public readonly right: IP) {
     super(null);
     if (left.type !== right.type) throw new Error('Expected same type of IP on both sides of range');
     if (!this.isLowerOrEqual(left, right)) throw new Error('Left side of range should be lower than right side');
@@ -384,7 +384,7 @@ export class IPSubnetwork extends IPMatch {
   public equals(match: IPMatch): boolean {
     return match instanceof IPSubnetwork && match.range.equals(this.range);
   }
-  /** Converts this IPSubnetwork to a string, by joining the IP and mask with a slash, e.g. "IP/mask" */
+  /** Converts this IPSubnetwork to a string in CIDR representation, e.g. "IP/mask" */
   public toString() {
     return this.input;
   }
