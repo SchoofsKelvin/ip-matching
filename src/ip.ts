@@ -395,6 +395,10 @@ export class IPRange extends IPMatch {
     }
     return result;
   }
+  /** Returns the first IP address in this range */
+  public getFirst(): IP { return this.left; }
+  /** Returns the last IP address in this range */
+  public getLast(): IP { return this.right; }
   protected isLowerOrEqual(left: IP, right: IP) {
     const l = left.parts;
     const r = right.parts;
@@ -454,6 +458,10 @@ export class IPSubnetwork extends IPMatch {
   public toString() {
     return this.input;
   }
+  /** Returns the first IP address in this range */
+  public getFirst(): IP { return this.range.left; }
+  /** Returns the last IP address in this range */
+  public getLast(): IP { return this.range.right; }
 }
 
 /** Represents an IP mask. The combination of an IP and a mask. A more complex version of IPSubnetwork. */
