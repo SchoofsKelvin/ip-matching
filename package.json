@@ -8,13 +8,16 @@
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^10",
+    "nodemon": "^2.0.6",
     "source-map-support": "^0.5.19",
     "typescript": "3.9"
   },
   "scripts": {
     "compile": "tsc",
-    "test": "node -r source-map-support/register lib/test.js",
-    "prepublishOnly": "node lib/test.js"
+    "watch": "tsc -w",
+    "test": "node lib/test.js",
+    "watch-test": "nodemon -w lib -e js lib/test.js",
+    "prepublishOnly": "tsc && node lib/test.js"
   },
   "author": {
     "name": "Kelvin Schoofs",

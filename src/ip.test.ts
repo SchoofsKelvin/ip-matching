@@ -1,6 +1,8 @@
 
 import { getMatch, IPMatch, IPSubnetwork, IPv4, IPv6, matches } from '.';
 
+console.log('===== RUNNING IP TESTS =====');
+
 const assert = (b: any) => { if (!b) throw new Error('oops'); };
 
 // Using the helper function matches
@@ -175,4 +177,4 @@ assert(!mySubnet.matches('FEFE::2:bbbb')); // false
   assert(new IPMatch('127.0.0.1') instanceof IPv4);
 }
 
-console.log('Seems like the demo/test works fine');
+console.log('Tests ran fine');
