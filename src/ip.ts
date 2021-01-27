@@ -58,16 +58,18 @@ export function getMatch(input: string | IPMatch): IPMatch {
  * Check the specific classes for more specialized methods, e.g. the 
  */
 export abstract class IPMatch {
+  /** String indicating the type of this IPMatch, as an alternative to `instanceof`. Check subclasses for the possible values */
   public readonly type!: string;
+  /** The string representation of this IPMatch. Not necessarily the exact input string that generated it */
+  public readonly input!: string;
   /**
    * This used to be the generic way of converting a string to an IPRange/IPv4/... without assuming a type.
    * This class is now made abstract with a protected constructor, in favor of the new `getMatch(input)` function.
    * The abstract/deprecated/protected flag are to warn users about switching over to the new function.
    * With the way TypeScript compiles them to JavaScript, this constructor still works (thus compatible with old code)
-   * @param input The string representation of this IPMatch. Not necessarily the exact input string that generated it
    * @deprecated Use `getMatch(input: string)` instead.
    */
-  protected constructor(public readonly input: string | null) {
+  protected constructor(input: string | null) {
     if (input == null) return this;
     return getMatch(input);
   }
@@ -89,7 +91,8 @@ export abstract class IPMatch {
 export class IPv4 extends IPMatch {
   public readonly type = 'IPv4';
   public readonly parts: number[];
-  constructor(public readonly input: string) {
+  public readonly input: string;
+  constructor(input: string) {
     super(null);
     this.input = input.trim();
     const ip = input.match(IP4_REGEX);
@@ -302,7 +305,7 @@ export function getIP(input: string | IP): IP | null {
 /** Represents a range of IP addresses, according to their numerical value */
 export class IPRange extends IPMatch {
   public readonly type = 'IPRange';
-  public input: string;
+  public readonly input: string;
   /** Both values should be the same type (IPv4 or IPv6) and `left` should be lower in numeric value than `right` */
   constructor(public readonly left: IP, public readonly right: IP) {
     super(null);
