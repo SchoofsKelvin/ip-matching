@@ -367,6 +367,34 @@ export class IPRange extends IPMatch {
   public toString() {
     return this.input;
   }
+  /** Converts this IPRange to an optimized list of (CIDR) IPSubnetworks */
+  public convertToSubnets(): IPSubnetwork[] {
+    const result: IPSubnetwork[] = [];
+    const { left, right } = this;
+    const { parts: rParts } = right;
+    const maxBits = left.type === 'IPv4' ? 32 : 128;
+    const bitsPerPart = left.type === 'IPv4' ? 8 : 16;
+    const rBits = rParts.reduce<number[]>((b, p) => [...b, ...toBits(p, bitsPerPart)], []);
+    let current: IP | undefined = left;
+    while (current && this.isLowerOrEqual(current, right)) {
+      const cBits = current.parts.reduce<number[]>((b, p) => [...b, ...toBits(p, bitsPerPart)], []);
+      let hostBits = 0;
+      for (let i = cBits.length - 1; i >= 0; i--) if (cBits[i]) break; else hostBits++;
+      let maxHostBits = 0;
+      for (let i = 0; i < cBits.length; i++) {
+        if (cBits[i] === rBits[i]) maxHostBits++; else break;
+      }
+      maxHostBits = maxBits - maxHostBits;
+      let trailingOnes = 0;
+      for (let i = rBits.length - 1; i >= 0; i--) if (rBits[i]) trailingOnes++; else break;
+      if (trailingOnes < maxHostBits) maxHostBits--;
+      const prefixLength = maxBits - Math.min(hostBits, maxHostBits);
+      const subnet: IPSubnetwork = new IPSubnetwork(current, prefixLength)
+      result.push(subnet);
+      current = subnet.getLast().getNext();
+    }
+    return result;
+  }
   protected isLowerOrEqual(left: IP, right: IP) {
     const l = left.parts;
     const r = right.parts;

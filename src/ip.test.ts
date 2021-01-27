@@ -167,6 +167,18 @@ assert(!mySubnet.matches('FEFE::2:bbbb')); // false
   if (failed) process.exit(1);
 }
 
+{
+  const match = getMatch('a:b:0:ff::-a:b:8:ffff:ffff:ffff:ffff:ffff');
+  // Similar to `convertToMasks`, but unique to IPRange and returns an IPSubnetwork array instead
+  const subnets = (match as IPRange).convertToSubnets();
+  assert(subnets.length === 13);
+  assert(subnets[0].toString() === 'a:b:0:ff::/64');
+  assert(subnets[6].toString() === 'a:b:0:2000::/51');
+  assert(subnets[12].toString() === 'a:b:8::/48');
+  console.log(`Subnets for ${match}:`);
+  subnets.forEach((s, i) => console.log(`  ${i}. ${s.toString()}`));
+}
+
 /* Special cases */
 {
   // In version 1.1.0 and earlier, `new IPMatch(input)` was basically what the
