@@ -52,10 +52,21 @@ export function getMatch(input: string | IPMatch): IPMatch {
   throw new Error('Invalid IP (range/subnetwork)');
 }
 
+const SYMBOL_CONVERTED_RANGES = Symbol('convertToMasks');
+function createCachedConvertToMasks<T>(converter: (this: T, obj: T) => IPMask[]): IPMatch['convertToMasks'] {
+  return function (this: T & { [SYMBOL_CONVERTED_RANGES]?: IPMask[] }) {
+    const ranges = this[SYMBOL_CONVERTED_RANGES];
+    if (ranges) return ranges;
+    return this[SYMBOL_CONVERTED_RANGES] = converter.call(this, this);
+  };
+}
+
 /**
  * Superclass of the IPv4, IPv6, IPRange and IPSubnetwork classes.
  * Only specifies a generic .matches() function and .type field.
- * Check the specific classes for more specialized methods, e.g. the 
+ * 
+ * **Check the specific classes for more specialized methods/docs**
+ * e.g. IPRange comes with `convertToSubnets`, IPv6 with `toLongString`, ...
  */
 export abstract class IPMatch {
   /** String indicating the type of this IPMatch, as an alternative to `instanceof`. Check subclasses for the possible values */
@@ -85,6 +96,13 @@ export abstract class IPMatch {
    * the IPSubnetwork `10.0.0.0/32` will result in this method returning false, even though they both only match `10.0.0.0`.
    */
   public abstract equals(match: IPMatch): boolean;
+  /**
+   * Converts this IPMatch to a list of IPMasks (union) matching the same IPs.
+   * IPRange has a handy method convertToSubnets() to convert the range to an array
+   * of IPSubnetworks, which are basically CIDR notations. If you're looking at
+   * this method, you might also be interested in checking `convertToSubnets` out.
+   */
+  public abstract convertToMasks(): IPMask[];
 }
 
 /** Represents an IPv4 address, optionall with wildcards */
@@ -137,6 +155,11 @@ export class IPv4 extends IPMatch {
   public toString() {
     return this.parts.map(v => v === -1 ? '*' : v).join('.');
   }
+  public convertToMasks = createCachedConvertToMasks<IPv4>(ip => {
+    if (ip.exact()) return [new IPMask(this, partsToIP(ip.parts.map(() => 255)))];
+    const lower = partsToIP(ip.parts.map(v => v === -1 ? 0 : v));
+    return [new IPMask(lower, partsToIP(ip.parts.map(v => v === -1 ? 0 : 255)))];
+  });
   /** Returns the next address, or undefined for `255.255.255.255` */
   public getNext(): IP | undefined {
     const newParts = [...this.parts];
@@ -297,6 +320,11 @@ export class IPv6 extends IPMatch {
     if (MIXED_ADDRESS_RANGES().some(m => m.matches(this))) return this.toMixedString();
     return shortenIPv6(this.toHextets());
   }
+  public convertToMasks = createCachedConvertToMasks<IPv6>(ip => {
+    if (ip.exact()) return [new IPMask(this, partsToIP(ip.parts.map(() => 0xffff)))];
+    const lower = partsToIP(ip.parts.map(v => v === -1 ? 0 : v));
+    return [new IPMask(lower, partsToIP(ip.parts.map(v => v === -1 ? 0 : 0xffff)))];
+  });
   /** Returns the next address, or undefined for `ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff` */
   public getNext(): IP | undefined {
     const newParts = [...this.parts];
@@ -335,6 +363,15 @@ function partsToIP(parts: number[]): IP {
   Object.assign(ip, { parts });
   (ip.input as string) = ip.toString();
   return ip;
+}
+
+/** `toBits(0b0010110101, 10)` would give `[0, 0, 1, 0, 1, 1, 0, 1, 0, 1]` */
+function toBits(value: number, bits: number): number[] {
+  const result: number[] = [];
+  while (bits--) {
+    result[bits] = (value >> bits) & 1;
+  }
+  return result.reverse();
 }
 
 /** Represents a range of IP addresses, according to their numerical value */
@@ -395,6 +432,9 @@ export class IPRange extends IPMatch {
     }
     return result;
   }
+  public convertToMasks = createCachedConvertToMasks<IPRange>(range =>
+    range.convertToSubnets().reduce<IPMask[]>((r, subnet) => [...r, ...subnet.convertToMasks()], [])
+  );
   /** Returns the first IP address in this range */
   public getFirst(): IP { return this.left; }
   /** Returns the last IP address in this range */
@@ -458,6 +498,21 @@ export class IPSubnetwork extends IPMatch {
   public toString() {
     return this.input;
   }
+  public convertToMasks = createCachedConvertToMasks<IPSubnetwork>(subnet => {
+    const isIPv4 = subnet.range.left.type === 'IPv4';
+    const parts: number[] = [];
+    const bitsPerPart = isIPv4 ? 8 : 16;
+    const max_part = (2 ** bitsPerPart) - 1;
+    let { bits } = this;
+    while (bits > 0) {
+      const adding = bits > bitsPerPart ? bitsPerPart : bits;
+      const neg = bitsPerPart - adding;
+      parts.push((max_part >> neg) << neg);
+      bits = bits - adding;
+    }
+    for (let i = parts.length, max = isIPv4 ? 4 : 8; i < max; i++) parts[i] = 0;
+    return [new IPMask(subnet.range.left, partsToIP(parts))];
+  });
   /** Returns the first IP address in this range */
   public getFirst(): IP { return this.range.left; }
   /** Returns the last IP address in this range */
@@ -497,4 +552,5 @@ export class IPMask extends IPMatch {
   public toString() {
     return this.input;
   }
+  public convertToMasks() { return [this]; };
 }

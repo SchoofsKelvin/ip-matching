@@ -1,5 +1,5 @@
 
-import { getMatch, IPMatch, IPSubnetwork, IPv4, IPv6, matches } from '.';
+import { getMatch, IPMask, IPMatch, IPRange, IPSubnetwork, IPv4, IPv6, matches } from '.';
 
 console.log('===== RUNNING IP TESTS =====');
 
@@ -167,14 +167,48 @@ assert(!mySubnet.matches('FEFE::2:bbbb')); // false
   if (failed) process.exit(1);
 }
 
+/* convertToMasks and convertToSubnets for IPv4 */
 {
-  const match = getMatch('a:b:0:ff::-a:b:8:ffff:ffff:ffff:ffff:ffff');
-  // Similar to `convertToMasks`, but unique to IPRange and returns an IPSubnetwork array instead
-  const subnets = (match as IPRange).convertToSubnets();
-  assert(subnets.length === 13);
+  assert(getMatch('10.0.0.1/24').convertToMasks().toString() === '10.0.0.0/255.255.255.0')
+  assert(getMatch('10.0.0.1').convertToMasks().toString() === '10.0.0.1/255.255.255.255')
+  assert(getMatch('10.*.0.1').convertToMasks().toString() === '10.0.0.1/255.0.255.255')
+  assert(getMatch('10.0.0.1/255.0.0.0').convertToMasks().toString() === '10.0.0.0/255.0.0.0')
+  const match = getMatch('1.1.1.111-1.1.1.120') as IPRange;
+  const masks: IPMask[] = match.convertToMasks();
+  assert(masks.length === 3);
+  assert(masks[0].toString() === '1.1.1.111/255.255.255.255');
+  assert(masks[1].toString() === '1.1.1.112/255.255.255.248');
+  assert(masks[2].toString() === '1.1.1.120/255.255.255.255');
+  console.log(`Masks for ${match}:`);
+  masks.forEach((m, i) => console.log(`  ${i}. ${m.toString()}`));
+  const subnets = match.convertToSubnets();
+  assert(subnets.length === 3);
+  assert(subnets[0].toString() === '1.1.1.111/32');
+  assert(subnets[1].toString() === '1.1.1.112/29');
+  assert(subnets[2].toString() === '1.1.1.120/32');
+  console.log(`Subnets for ${match}:`);
+  subnets.forEach((s, i) => console.log(`  ${i}. ${s.toString()}`));
+}
+
+/* convertToMasks and convertToSubnets for IPv6 */
+{
+  assert(getMatch('a::b/24').convertToMasks().toString() === 'a::/ffff:ff00::')
+  assert(getMatch('a::b').convertToMasks().toString() === 'a::b/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff')
+  assert(getMatch('a:*::b').convertToMasks().toString() === 'a::b/ffff::ffff:ffff:ffff:ffff:ffff:ffff')
+  assert(getMatch('a::b/ffff::f00').convertToMasks().toString() === 'a::/ffff::f00')
+  const match = getMatch('a:b:0:ff::-a:b:8:ffff::') as IPRange;
+  const masks: IPMask[] = match.convertToMasks();
+  assert(masks.length === 29);
+  assert(masks[0].toString() === 'a:b:0:ff::/ffff:ffff:ffff:ffff::');
+  assert(masks[11].toString() === 'a:b:4::/ffff:ffff:fffc::');
+  assert(masks[28].toString() === 'a:b:8:ffff::/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff');
+  console.log(`Masks for ${match}:`);
+  masks.forEach((m, i) => console.log(`  ${i}. ${m.toString()}`));
+  const subnets = match.convertToSubnets();
+  assert(subnets.length === 29);
   assert(subnets[0].toString() === 'a:b:0:ff::/64');
-  assert(subnets[6].toString() === 'a:b:0:2000::/51');
-  assert(subnets[12].toString() === 'a:b:8::/48');
+  assert(subnets[11].toString() === 'a:b:4::/46');
+  assert(subnets[28].toString() === 'a:b:8:ffff::/128');
   console.log(`Subnets for ${match}:`);
   subnets.forEach((s, i) => console.log(`  ${i}. ${s.toString()}`));
 }
