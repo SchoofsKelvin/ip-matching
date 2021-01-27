@@ -2,30 +2,45 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
+			"label": "Full development mode",
+			"detail": "Run all Watch scripts",
+			"group": "build",
+			"dependsOn": [
+				"TypeScript - Watch",
+				"Test - Watch",
+				"API - Watch"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
 			"type": "npm",
 			"script": "watch",
 			"problemMatcher": [
 				"$tsc-watch"
 			],
 			"group": "build",
-			"label": "npm: watch",
-			"detail": "tsc -w",
-			"isBackground": true,
-			"runOptions": {
-				"runOn": "folderOpen"
-			}
+			"label": "TypeScript - Watch",
+			"detail": "Run tsc in watch mode",
+			"isBackground": true
 		},
 		{
 			"type": "npm",
 			"script": "watch-test",
 			"group": "test",
 			"problemMatcher": [],
-			"label": "npm: watch-test",
-			"detail": "nodemon -w lib -e js lib/test.js",
-			"isBackground": true,
-			"runOptions": {
-				"runOn": "folderOpen"
-			}
+			"label": "Test - Watch",
+			"detail": "Run lib/test.js with sourcemap",
+			"isBackground": true
+		},
+		{
+			"type": "npm",
+			"script": "watch-api",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "API - Watch",
+			"detail": "api-extractor",
+			"isBackground": true
 		}
 	]
 }

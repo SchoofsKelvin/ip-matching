@@ -1,14 +1,5 @@
 
-logs
-*.log
-
-pids
-node_modules
-.npm
-
-*.dat
-
-.vscode
 .DS_Store
 
-config/default.json
+node_modules
+temp

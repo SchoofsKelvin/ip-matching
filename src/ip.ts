@@ -19,7 +19,7 @@ function wildcardToNumber(max: number, radix: number = 10) {
  * Converts a string to an IPMatch object. This correspondends either to
  * an IPv4, IPv4, IPRange or IPSubnetwork object, all extending the IPMatch class.
  * For ease-of-use, if the given input is an IPMatch object, that object itself is returned.
- * @param input The input string to convert, or IPMatch object to return.
+ * @param input - The input string to convert, or IPMatch object to return.
  * @returns Returns an IPMatch for the given string (or returns the given IPMatch itself)
  */
 export function getMatch(input: string | IPMatch): IPMatch {

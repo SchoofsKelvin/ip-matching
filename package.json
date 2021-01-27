@@ -3,10 +3,11 @@
   "version": "1.2.1",
   "type": "commonjs",
   "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "types": "api/index.d.ts",
   "description": "See whether an IPv4 or IPv6 address matches an IP (range) or subnetwork",
   "dependencies": {},
   "devDependencies": {
+    "@microsoft/api-extractor": "^7.13.0",
     "@types/node": "^10",
     "nodemon": "^2.0.6",
     "source-map-support": "^0.5.19",
@@ -17,7 +18,10 @@
     "watch": "tsc -w",
     "test": "node lib/test.js",
     "watch-test": "nodemon -w lib -e js lib/test.js",
-    "prepublishOnly": "tsc && node lib/test.js"
+    "api": "api-extractor run",
+    "api-local": "api-extractor run -l",
+    "watch-api": "nodemon -w api-extractor.json -w lib -e d.ts --exec yarn api-extractor -- run -l",
+    "prepublishOnly": "yarn compile && yarn test && yarn api"
   },
   "author": {
     "name": "Kelvin Schoofs",
@@ -26,5 +30,20 @@
   },
   "bugs": "https://github.com/SchoofsKelvin/ip-matching/issues",
   "repository": "SchoofsKelvin/ip-matching",
-  "license": "LGPL-3.0-only"
+  "license": "LGPL-3.0-only",
+  "keywords": [
+    "match",
+    "IP",
+    "address",
+    "IPv4",
+    "IPv6",
+    "CIDR",
+    "notation",
+    "range",
+    "subnet",
+    "subnetwork",
+    "net",
+    "network",
+    "mask"
+  ]
 }
