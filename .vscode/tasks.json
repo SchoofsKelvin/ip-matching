@@ -7,7 +7,6 @@
 			"group": "build",
 			"dependsOn": [
 				"TypeScript - Watch",
-				"Test - Watch",
 				"API - Watch"
 			],
 			"isBackground": true,
@@ -22,15 +21,6 @@
 			"group": "build",
 			"label": "TypeScript - Watch",
 			"detail": "Run tsc in watch mode",
-			"isBackground": true
-		},
-		{
-			"type": "npm",
-			"script": "watch-test",
-			"group": "test",
-			"problemMatcher": [],
-			"label": "Test - Watch",
-			"detail": "Run lib/test.js with sourcemap",
 			"isBackground": true
 		},
 		{
