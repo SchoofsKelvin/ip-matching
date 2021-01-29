@@ -48,7 +48,7 @@ export abstract class IPMatch {
 export class IPRange extends IPMatch {
     constructor(left: IP, right: IP);
     // (undocumented)
-    convertToMasks: () => IPMask[];
+    convertToMasks(): IPMask[];
     convertToSubnets(): IPSubnetwork[];
     // (undocumented)
     equals(match: IPMatch): boolean;
@@ -74,7 +74,7 @@ export class IPSubnetwork extends IPMatch {
     // (undocumented)
     readonly bits: number;
     // (undocumented)
-    convertToMasks: () => IPMask[];
+    convertToMasks(): IPMask[];
     // (undocumented)
     equals(match: IPMatch): boolean;
     getFirst(): IP;
@@ -93,7 +93,7 @@ export class IPSubnetwork extends IPMatch {
 export class IPv4 extends IPMatch {
     constructor(input: string);
     // (undocumented)
-    convertToMasks: () => IPMask[];
+    convertToMasks(): IPMask[];
     // (undocumented)
     equals(match: IPMatch): boolean;
     exact(): boolean;
@@ -112,7 +112,7 @@ export class IPv4 extends IPMatch {
 export class IPv6 extends IPMatch {
     constructor(input: string);
     // (undocumented)
-    convertToMasks: () => IPMask[];
+    convertToMasks(): IPMask[];
     // (undocumented)
     equals(match: IPMatch): boolean;
     exact(): boolean;

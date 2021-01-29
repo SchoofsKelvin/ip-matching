@@ -98,7 +98,8 @@ export declare class IPRange extends IPMatch {
     toString(): string;
     /** Converts this IPRange to an optimized list of (CIDR) IPSubnetworks */
     convertToSubnets(): IPSubnetwork[];
-    convertToMasks: () => IPMask[];
+    
+    convertToMasks(): IPMask[];
     /** Returns the first IP address in this range */
     getFirst(): IP;
     /** Returns the last IP address in this range */
@@ -119,7 +120,8 @@ export declare class IPSubnetwork extends IPMatch {
     equals(match: IPMatch): boolean;
     /** Converts this IPSubnetwork to a string in CIDR representation, e.g. "IP/mask" */
     toString(): string;
-    convertToMasks: () => IPMask[];
+    
+    convertToMasks(): IPMask[];
     /** Returns the first IP address in this range */
     getFirst(): IP;
     /** Returns the last IP address in this range */
@@ -149,7 +151,8 @@ export declare class IPv4 extends IPMatch {
      * For example: `"10.*.0.*"`
      */
     toString(): string;
-    convertToMasks: () => IPMask[];
+    
+    convertToMasks(): IPMask[];
     /** Returns the next address, or undefined for `255.255.255.255` */
     getNext(): IP | undefined;
 }
@@ -198,7 +201,8 @@ export declare class IPv6 extends IPMatch {
      *    - `"::ffff:0:127.0.0.1"`
      */
     toString(): string;
-    convertToMasks: () => IPMask[];
+    
+    convertToMasks(): IPMask[];
     /** Returns the next address, or undefined for `ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff` */
     getNext(): IP | undefined;
 }
