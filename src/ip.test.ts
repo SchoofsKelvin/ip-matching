@@ -1,226 +1,311 @@
 
-import { getMatch, IPMask, IPMatch, IPRange, IPSubnetwork, IPv4, IPv6, matches } from '.';
+import { getMatch, IPMask, IPMatch, IPRange, IPv4, IPv6, matches } from '.';
+import { IPSubnetwork } from './ip';
 
-console.log('===== RUNNING IP TESTS =====');
-
-const assert = (b: any) => { if (!b) throw new Error('oops'); };
-
-// Using the helper function matches
-// matches(ip: string | IP, target: string | IPMatch): boolean;
-assert(matches('10.0.0.1', '10.0.0.0/24')); // true
-assert(!matches('10.0.1.1', '10.0.0.0/24')); // false
-assert(matches('abc::def', 'abc:*::def')); // true
-assert(!matches('abc::def', 'abc:9::def')); // false
-assert(matches('0001:2:3:4:5:6:7', '1:2:3:4:5:6:7')); // true
-
-// getMatch returns an instance of
-// IPv4, IPv6, IPRange, IPSubnetwork or IPMask, all extending IPMatch
-const mySubnet = getMatch('fefe::0001:abcd/112');
-assert(mySubnet.type === 'IPSubnetwork'); // 'IPSubnetwork'
-assert(mySubnet instanceof IPSubnetwork); // true
-assert(mySubnet instanceof IPMatch); // true
-assert(mySubnet.matches('FEFE::1:bbbb')); // true
-assert(!mySubnet.matches('FEFE::2:bbbb')); // false
-
-/* IPv4 */
-{
-  // Directly creating the IPMatch and using
-  // IPMatch.matches(ip: IP | string): boolean;
-  const ip = getMatch('10.0.0.0') as IPv4; // returns an IPv4
-  assert(ip.exact()); // true
-  assert(ip.matches('10.0.0.0')); // true
-  assert(!ip.matches('9.255.255.255')); // false
-
-  const ipw = getMatch('10.0.*.0') as IPv4; // also returns an IPv4
-  // (an octet/hextet has to be a number or a wildcard)
-  // (e.g. 10.*.*.0 is valid, 10.1*.0.0 isn't)
-  assert(!ipw.exact()); // false
-  assert(ipw.matches('10.0.0.0')); // true
-  assert(ipw.matches('10.0.123.0')); // true
-  assert(!ipw.matches('10.0.0.123')); // false
-
-  const range = getMatch('10.0.0.0-10.1.255.255'); // returns an IPRange
-  assert(range.matches('10.0.0.5')); // true
-  assert(range.matches('10.0.5.5')); // true
-  assert(!range.matches('10.5.5.5')); // false
-
-  const subnet = getMatch('10.20.30.40/16'); // returns an IPSubnetwork
-  assert(subnet.toString() === '10.20.0.0/16'); // "Standard" form
-  assert(subnet.matches('10.20.30.40')); // true
-  assert(subnet.matches('10.20.50.50')); // true
-  assert(subnet.matches('10.20.255.255')); // true
-  assert(subnet.matches('10.20.20.40')); // true
-  assert(!subnet.matches('10.21.0.0')); // false
-  assert(!subnet.matches('10.21.30.40')); // false
-  assert(!subnet.matches('10.5.5.5')); // false
-
-  const mask = getMatch('10.20.130.40/255.0.128.0'); // returns an IPMask
-  assert(mask.toString() === '10.0.128.0/255.0.128.0');
-  assert(mask.matches('10.20.130.40')); // true
-  assert(mask.matches('10.30.130.50')); // true
-  assert(mask.matches('10.20.150.50')); // true
-  assert(!mask.matches('10.20.10.50')); // false
-  assert(mask.matches('10.20.255.255')); // true
-  assert(mask.matches('10.50.130.50')); // true
-  assert(!mask.matches('11.50.130.50')); // false
+function expectGetMatch<T extends IPMatch>(str: string, type: new (...args: any) => T): T {
+  const result = getMatch(str);
+  expect(result).toBeInstanceOf(IPMatch);
+  expect(result).toBeInstanceOf(type);
+  return result as T;
 }
 
-/* IPv6 */
-{
-  // Directly creating the IPMatch and using
-  // IPMatch.matches(ip: IP | string): boolean;
-  const ip = getMatch('aaaa::bbbb') as IPv6; // returns an IPv6
-  assert(ip.exact()); // true
-  assert(ip.matches('aaaa::bbbb')); // true
-  assert(!ip.matches('aaaa::cccc')); // false
-
-  const ipw = getMatch('aaaa::*:cccc') as IPv6; // also returns an IPv6
-  // (an octet/hextet has to be a number or a wildcard)
-  // (e.g. aaaa::*:cccc is valid, aaaa::b*:cccc isn't)
-  assert(!ipw.exact()); // false
-  assert(ipw.matches('aaaa::cccc')); // true
-  assert(ipw.matches('aaaa::1234:cccc')); // true
-  assert(!ipw.matches('aaaa::cccd')); // false
-
-  const range = getMatch('aaaa::bbbb:0-aaaa::cccc:0'); // returns an IPRange
-  assert(range.matches('aaaa::bbbb:0')); // true
-  assert(range.matches('aaaa::bbcc:1234')); // true
-  assert(!range.matches('aaaa::1:bbbb:0')); // false
-
-  const subnet = getMatch('a:b:c:d::/64'); // returns an IPSubnetwork
-  assert(subnet.matches('a:b:c:d::')); // true
-  assert(subnet.matches('a:b:c:d:ffff:ffff:ffff:ffff')); // true
-  assert(subnet.matches('a:b:c:d:1:2:3:4')); // true
-  assert(!subnet.matches('a:b:c:dd::')); // false
-  assert(!subnet.matches('a:b:c:cfff::')); // false
-  assert(!subnet.matches('c::')); // false
-
-  const mask = getMatch('a:b:cccc:d::/ffff:0:ff00:0::'); // returns an IPMask
-  assert(mask.toString() === 'a:0:cc00::/ffff:0:ff00::');
-  assert(mask.matches('a:0:cc00::')); // true
-  assert(mask.matches('a:0:cc00::1')); // true
-  assert(mask.matches('a:0:ccdd::')); // true
-  assert(!mask.matches('a::')); // false
-  assert(!mask.matches('a:0:dd00::')); // false
-  assert(!mask.matches('b:0:cc00::')); // false
-
-  /** String representations */
-
-  // toString() for IPv6 produces the shortest possible address
-  assert(new IPv6('a:0:0::B:0:C').toString() === 'a::b:0:c');
-
-  // Other string (or similar) representation methods:
-  assert(new IPv6('a:0:0::B:0:C').toLongString() === 'a:0:0:0:0:b:0:c');
-  assert(new IPv6('a:0:0::B:0:C').toFullString() === '000a:0000:0000:0000:0000:000b:0000:000c');
-  assert(new IPv6('::ffff:a9db:d85').toMixedString() === '::ffff:169.219.13.133');
-  assert(new IPv6('::ffff:a9db:*').toMixedString() === '::ffff:169.219.*.*');
-  assert(new IPv6('a::10.0.0.0').toMixedString() === 'a::10.0.0.0');
-  assert(JSON.stringify(new IPv6('a:0:*::B:0:C').toHextets()) === '["a","0","*","0","0","b","0","c"]');
-
-  // IPRange/IPSubnetwork use the shortened .toString() for IPv6:
-  assert(getMatch('a::bc:1234/112').toString() === 'a::bc:0/112');
-  // IPMask also uses the shortened .toString() for IPv6:
-  assert(getMatch('a::abbc:1234/ffff::ff80:000f').toString() === 'a::ab80:4/ffff::ff80:f');
-
-  // Super short notation of IPv6 unspecified address
-  assert(new IPv6('::').toString() === '::');
-  // Quite short notation of e.g. IPv6 localhost address
-  assert(new IPv6('::1').toString() === '::1');
-  // Short notation but the other way around
-  assert(new IPv6('A::').toString() === 'a::');
-
-  // IPs that are known to be mixed format should have .toString() return the mixed format
-  assert(new IPv6('::ffff:a9db:*').toString() === '::ffff:169.219.*.*');
-  assert(new IPv6('::ffff:0:a9:0').toString() === '::ffff:0:0.169.0.0');
-
-  // Now we should also be able to parse mixed formats:
-  assert(new IPv6('::ffff:0:0.169.0.0').toString() === '::ffff:0:0.169.0.0');
+function testIP<T extends IPMatch>(ip: string, type: new (...args: any) => T, func: (obj: T) => void): void {
+  test(ip, () => {
+    const obj = getMatch(ip) as T;
+    expect(obj).toBeInstanceOf(IPMatch);
+    expect(obj).toBeInstanceOf(type);
+    return func(obj);
+  });
 }
 
-/* IPMatch.prototype.equals */
-{
-  const matches: IPMatch[] = [
-    getMatch('10.20.30.40'),
-    getMatch('10.20.30.50'),
-    getMatch('10.20.30.40/16'),
-    getMatch('10.20.30.40/24'),
-    getMatch('10.20.30.40/32'),
-    getMatch('10.20.30.40-10.20.30.40'),
-    getMatch('10.20.30.0-10.20.30.255'),
-    getMatch('a::bc:1234'),
-    getMatch('a::bc:5678'),
-    getMatch('a::bc:1234/64'),
-    getMatch('a::bc:1234/112'),
-    getMatch('a::bc:1234/128'),
-    getMatch('a::bc:1234-a::bc:1234'),
-    getMatch('a::bc:0-a::bc:ffff'),
-  ];
-  let failed = false;
-  for (const a of matches) {
-    for (const b of matches) {
-      const eq = a.equals(b);
-      if (eq === (a === b)) continue;
-      console.error(`Matches '${a}' and '${b}' where unexpectedly ${eq ? 'equal' : 'unequal'}`);
-      failed = true;
-    }
-  }
-  if (failed) process.exit(1);
-}
+const toString = (obj: any): string => `${obj}`;
 
-/* convertToMasks and convertToSubnets for IPv4 */
-{
-  assert(getMatch('10.0.0.1/24').convertToMasks().toString() === '10.0.0.0/255.255.255.0')
-  assert(getMatch('10.0.0.1').convertToMasks().toString() === '10.0.0.1/255.255.255.255')
-  assert(getMatch('10.*.0.1').convertToMasks().toString() === '10.0.0.1/255.0.255.255')
-  assert(getMatch('10.0.0.1/255.0.0.0').convertToMasks().toString() === '10.0.0.0/255.0.0.0')
-  const match = getMatch('1.1.1.111-1.1.1.120') as IPRange;
-  const masks: IPMask[] = match.convertToMasks();
-  assert(masks.length === 3);
-  assert(masks[0].toString() === '1.1.1.111/255.255.255.255');
-  assert(masks[1].toString() === '1.1.1.112/255.255.255.248');
-  assert(masks[2].toString() === '1.1.1.120/255.255.255.255');
-  console.log(`Masks for ${match}:`);
-  masks.forEach((m, i) => console.log(`  ${i}. ${m.toString()}`));
-  const subnets = match.convertToSubnets();
-  assert(subnets.length === 3);
-  assert(subnets[0].toString() === '1.1.1.111/32');
-  assert(subnets[1].toString() === '1.1.1.112/29');
-  assert(subnets[2].toString() === '1.1.1.120/32');
-  console.log(`Subnets for ${match}:`);
-  subnets.forEach((s, i) => console.log(`  ${i}. ${s.toString()}`));
-}
+describe(IPv4, () => {
+  testIP('10.0.0.0', IPv4, ip => {
+    expect(ip.exact()).toBe(true);
+    expect(ip.matches('10.0.0.0')).toBe(true);
+    expect(ip.matches('9.255.255.255')).toBe(false);
+  });
+  testIP('10.0.*.0', IPv4, ip => {
+    expect(ip.exact()).toBe(false);
+    expect(ip.matches('10.0.0.0')).toBe(true);
+    expect(ip.matches('10.0.123.0')).toBe(true);
+    expect(ip.matches('10.0.0.123')).toBe(false);
+  });
+});
 
-/* convertToMasks and convertToSubnets for IPv6 */
-{
-  assert(getMatch('a::b/24').convertToMasks().toString() === 'a::/ffff:ff00::')
-  assert(getMatch('a::b').convertToMasks().toString() === 'a::b/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff')
-  assert(getMatch('a:*::b').convertToMasks().toString() === 'a::b/ffff::ffff:ffff:ffff:ffff:ffff:ffff')
-  assert(getMatch('a::b/ffff::f00').convertToMasks().toString() === 'a::/ffff::f00')
-  const match = getMatch('a:b:0:ff::-a:b:8:ffff::') as IPRange;
-  const masks: IPMask[] = match.convertToMasks();
-  assert(masks.length === 29);
-  assert(masks[0].toString() === 'a:b:0:ff::/ffff:ffff:ffff:ffff::');
-  assert(masks[11].toString() === 'a:b:4::/ffff:ffff:fffc::');
-  assert(masks[28].toString() === 'a:b:8:ffff::/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff');
-  console.log(`Masks for ${match}:`);
-  masks.forEach((m, i) => console.log(`  ${i}. ${m.toString()}`));
-  const subnets = match.convertToSubnets();
-  assert(subnets.length === 29);
-  assert(subnets[0].toString() === 'a:b:0:ff::/64');
-  assert(subnets[11].toString() === 'a:b:4::/46');
-  assert(subnets[28].toString() === 'a:b:8:ffff::/128');
-  console.log(`Subnets for ${match}:`);
-  subnets.forEach((s, i) => console.log(`  ${i}. ${s.toString()}`));
-}
+describe(IPv6, () => {
+  testIP('aaaa::bbbb', IPv6, ip => {
+    expect(ip.exact()).toBe(true);
+    expect(ip.matches('aaaa::bbbb')).toBe(true);
+    expect(ip.matches('aaaa::cccc')).toBe(false);
+  });
+  testIP('aaaa::*:cccc', IPv6, ip => {
+    expect(ip.exact()).toBe(false);
+    expect(ip.matches('aaaa::cccc')).toBe(true);
+    expect(ip.matches('aaaa::1234:cccc')).toBe(true);
+    expect(ip.matches('aaaa::cccd')).toBe(false);
+  });
+  testIP('a::b', IPv6, ip => {
+    expect(ip.exact()).toBe(true);
+    expect(ip.matches('a::b')).toBe(true);
+    expect(ip.matches('a::0:b')).toBe(true);
+    expect(ip.matches('a:0::b')).toBe(true);
+    expect(ip.matches('a:0:0:0:0:0:0:b')).toBe(true);
+    expect(ip.matches('b::b')).toBe(false);
+    expect(ip.matches('b::0:b')).toBe(false);
+    expect(ip.matches('b:0::b')).toBe(false);
+    expect(ip.matches('b:0:0:0:0:0:0:b')).toBe(false);
+  });
+  testIP('a:0:0::B:0:C', IPv6, ip => {
+    expect(ip.toString()).toBe('a::b:0:c');
+    expect(ip.toLongString()).toBe('a:0:0:0:0:b:0:c');
+    expect(ip.toFullString()).toBe('000a:0000:0000:0000:0000:000b:0000:000c');
+    expect(ip.toHextets()).toEqual(['a', '0', '0', '0', '0', 'b', '0', 'c']);
+  });
+  testIP('a:0:*::B:0:C', IPv6, ip => {
+    expect(ip.toString()).toBe('a:0:*::b:0:c');
+    expect(ip.toLongString()).toBe('a:0:*:0:0:b:0:c');
+    expect(ip.toFullString()).toBe('000a:0000:*:0000:0000:000b:0000:000c');
+    expect(ip.toHextets()).toEqual(['a', '0', '*', '0', '0', 'b', '0', 'c']);
+  });
+  testIP('::ffff:a9db:d85', IPv6, ip => {
+    expect(ip.toString()).toBe('::ffff:169.219.13.133');
+    expect(ip.toMixedString()).toBe('::ffff:169.219.13.133');
+  });
+  testIP('::ffff:a9db:*', IPv6, ip => {
+    expect(ip.toString()).toBe('::ffff:169.219.*.*');
+    expect(ip.toMixedString()).toBe('::ffff:169.219.*.*');
+  });
+  testIP('::ffff:0:0.169.0.0', IPv6, ip => {
+    expect(ip.toString()).toBe('::ffff:0:0.169.0.0');
+    expect(ip.toMixedString()).toBe('::ffff:0:0.169.0.0');
+  });
+  testIP('a::10.0.0.0', IPv6, ip => {
+    expect(ip.toString()).toBe('a::a00:0');
+    expect(ip.toMixedString()).toBe('a::10.0.0.0');
+  });
+  testIP('::', IPv6, ip => {
+    expect(ip.toString()).toBe('::');
+  });
+  testIP('::1', IPv6, ip => {
+    expect(ip.toString()).toBe('::1');
+  });
+  testIP('A::', IPv6, ip => {
+    expect(ip.toString()).toBe('a::');
+  });
+});
 
-/* Special cases */
-{
-  // In version 1.1.0 and earlier, `new IPMatch(input)` was basically what the
-  // current `getMatch(input)` is. While TypeScript typing complains we can't
-  // use it like that anymore (as expected), it still has to be able to function
-  // this way to keep compatibility with older code still using this constructor.
+describe(IPRange, () => {
+  testIP('10.0.0.0-10.1.255.255', IPRange, range => {
+    expect(range.toString()).toBe('10.0.0.0-10.1.255.255');
+    expect(range.matches('10.0.0.5')).toBe(true);
+    expect(range.matches('10.0.5.5')).toBe(true);
+    expect(range.matches('10.5.5.5')).toBe(false);
+    const left = expectGetMatch('10.0.0.0', IPv4);
+    expect(range.left.equals(left)).toBe(true);
+    const right = expectGetMatch('10.1.255.255', IPv4);
+    expect(range.right.equals(right)).toBe(true);
+  });
+  testIP('aaaa::bbbb:0-aaaa::cccc:00', IPRange, range => {
+    expect(range.toString()).toBe('aaaa::bbbb:0-aaaa::cccc:0');
+    expect(range.matches('aaaa::bbbb:0')).toBe(true);
+    expect(range.matches('aaaa::bbcc:1234')).toBe(true);
+    expect(range.matches('aaaa::1:bbbb:0')).toBe(false);
+    const left = expectGetMatch('aaaa::bbbb:0', IPv6);
+    expect(range.left.equals(left)).toBe(true);
+    const right = expectGetMatch('aaaa::cccc:0', IPv6);
+    expect(range.right.equals(right)).toBe(true);
+  });
+  describe('convertToSubnets', () => {
+    testIP('1.1.1.111-1.1.1.120', IPRange, range => {
+      expect(range.convertToSubnets().map(toString)).toEqual([
+        '1.1.1.111/32',
+        '1.1.1.112/29',
+        '1.1.1.120/32',
+      ]);
+    });
+    testIP('a:b:0:ff::-a:b:8:ffff::', IPRange, range => {
+      expect(range.convertToSubnets().map(toString)).toEqual([
+        'a:b:0:ff::/64',
+        'a:b:0:100::/56',
+        'a:b:0:200::/55',
+        'a:b:0:400::/54',
+        'a:b:0:800::/53',
+        'a:b:0:1000::/52',
+        'a:b:0:2000::/51',
+        'a:b:0:4000::/50',
+        'a:b:0:8000::/49',
+        'a:b:1::/48',
+        'a:b:2::/47',
+        'a:b:4::/46',
+        'a:b:8::/49',
+        'a:b:8:8000::/50',
+        'a:b:8:c000::/51',
+        'a:b:8:e000::/52',
+        'a:b:8:f000::/53',
+        'a:b:8:f800::/54',
+        'a:b:8:fc00::/55',
+        'a:b:8:fe00::/56',
+        'a:b:8:ff00::/57',
+        'a:b:8:ff80::/58',
+        'a:b:8:ffc0::/59',
+        'a:b:8:ffe0::/60',
+        'a:b:8:fff0::/61',
+        'a:b:8:fff8::/62',
+        'a:b:8:fffc::/63',
+        'a:b:8:fffe::/64',
+        'a:b:8:ffff::/128',
+      ]);
+    });
+  });
+});
+
+describe(IPSubnetwork, () => {
+  testIP('10.20.30.40/16', IPSubnetwork, subnet => {
+    expect(subnet.toString()).toBe('10.20.0.0/16');
+    expect(subnet.matches('10.20.30.40')).toBe(true);
+    expect(subnet.matches('10.20.50.50')).toBe(true);
+    expect(subnet.matches('10.20.255.255')).toBe(true);
+    expect(subnet.matches('10.20.20.40')).toBe(true);
+    expect(subnet.matches('10.21.0.0')).toBe(false);
+    expect(subnet.matches('10.21.30.40')).toBe(false);
+    expect(subnet.matches('10.5.5.5')).toBe(false);
+  });
+  testIP('a:b:c:d::/64', IPSubnetwork, subnet => {
+    expect(subnet.toString()).toBe('a:b:c:d::/64');
+    expect(subnet.matches('a:b:c:d::')).toBe(true);
+    expect(subnet.matches('a:b:c:d:ffff:ffff:ffff:ffff')).toBe(true);
+    expect(subnet.matches('a:b:c:d:1:2:3:4')).toBe(true);
+    expect(subnet.matches('a:b:c:dd::')).toBe(false);
+    expect(subnet.matches('a:b:c:cfff::')).toBe(false);
+    expect(subnet.matches('c::')).toBe(false);
+  });
+});
+
+describe(IPMask, () => {
+  testIP('10.20.130.40/255.0.128.0', IPMask, mask => {
+    expect(mask.toString()).toBe('10.0.128.0/255.0.128.0');
+    expect(mask.matches('10.20.130.40')).toBe(true);
+    expect(mask.matches('10.30.130.50')).toBe(true);
+    expect(mask.matches('10.20.150.50')).toBe(true);
+    expect(mask.matches('10.20.10.50')).toBe(false);
+    expect(mask.matches('10.20.255.255')).toBe(true);
+    expect(mask.matches('10.50.130.50')).toBe(true);
+    expect(mask.matches('11.50.130.50')).toBe(false);
+  });
+  testIP('a:b:cccc:d::/ffff:0:ff00:0::', IPMask, mask => {
+    expect(mask.toString()).toBe('a:0:cc00::/ffff:0:ff00::');
+    expect(mask.matches('a:0:cc00::')).toBe(true);
+    expect(mask.matches('a:0:cc00::1')).toBe(true);
+    expect(mask.matches('a:0:ccdd::')).toBe(true);
+    expect(mask.matches('a::')).toBe(false);
+    expect(mask.matches('a:0:dd00::')).toBe(false);
+    expect(mask.matches('b:0:cc00::')).toBe(false);
+  });
+  describe('equals', () => {
+    const matches: IPMatch[] = [
+      expectGetMatch('10.20.30.40', IPv4),
+      expectGetMatch('10.20.30.50', IPv4),
+      expectGetMatch('10.20.30.40/16', IPSubnetwork),
+      expectGetMatch('10.20.30.40/24', IPSubnetwork),
+      expectGetMatch('10.20.30.40/32', IPSubnetwork),
+      expectGetMatch('10.20.30.40-10.20.30.40', IPRange),
+      expectGetMatch('10.20.30.0-10.20.30.255', IPRange),
+      expectGetMatch('a::bc:1234', IPv6),
+      expectGetMatch('a::bc:5678', IPv6),
+      expectGetMatch('a::bc:1234/64', IPSubnetwork),
+      expectGetMatch('a::bc:1234/112', IPSubnetwork),
+      expectGetMatch('a::bc:1234/128', IPSubnetwork),
+      expectGetMatch('a::bc:1234-a::bc:1234', IPRange),
+      expectGetMatch('a::bc:0-a::bc:ffff', IPRange),
+    ];
+    test.each(matches)('%s', a => {
+      matches.forEach(b => expect(a.equals(b)).toBe(a === b));
+    });
+  });
+});
+
+describe(matches, () => {
+  test.each<[string, string, boolean]>([
+    ['10.0.0.1', '10.0.0.0/24', true],
+    ['10.0.1.1', '10.0.0.0/24', false],
+    ['abc::def', 'abc:*::def', true],
+    ['abc::def', 'abc:9::def', false],
+    ['0001:2:3:4:5:6:7', '1:2:3:4:5:6:7', true],
+  ])('expect matches(%s, %s) to return %s', (a, b, c) => {
+    expect(matches(a, b)).toBe(c);
+  });
+});
+
+describe('convertToMasks', () => {
+  testIP('10.0.0.1/24', IPSubnetwork, range => {
+    expect(range.convertToMasks().map(toString)).toEqual(['10.0.0.0/255.255.255.0']);
+  });
+  testIP('10.0.0.1', IPv4, ip => {
+    expect(ip.convertToMasks().map(toString)).toEqual(['10.0.0.1/255.255.255.255']);
+  });
+  testIP('10.*.0.1', IPv4, ip => {
+    expect(ip.convertToMasks().map(toString)).toEqual(['10.0.0.1/255.0.255.255']);
+  });
+  testIP('10.0.0.1/255.0.0.0', IPMask, mask => {
+    expect(mask.convertToMasks().map(toString)).toEqual(['10.0.0.0/255.0.0.0']);
+  });
+  testIP('1.1.1.111-1.1.1.120', IPRange, range => {
+    expect(range.convertToMasks().map(toString)).toEqual([
+      '1.1.1.111/255.255.255.255',
+      '1.1.1.112/255.255.255.248',
+      '1.1.1.120/255.255.255.255',
+    ]);
+  });
+  testIP('a::b/32', IPSubnetwork, range => {
+    expect(range.convertToMasks().map(toString)).toEqual(['a::/ffff:ffff::']);
+  });
+  testIP('a::b', IPv6, ip => {
+    expect(ip.convertToMasks().map(toString)).toEqual(['a::b/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff']);
+  });
+  testIP('a:*::b', IPv6, ip => {
+    expect(ip.convertToMasks().map(toString)).toEqual(['a::b/ffff::ffff:ffff:ffff:ffff:ffff:ffff']);
+  });
+  testIP('a:bbcc::d/ffff:ff00::', IPMask, mask => {
+    expect(mask.convertToMasks().map(toString)).toEqual(['a:bb00::/ffff:ff00::']);
+  });
+  testIP('a:b:0:ff::-a:b:8:ffff::', IPRange, range => {
+    expect(range.convertToMasks().map(toString)).toEqual([
+      'a:b:0:ff::/ffff:ffff:ffff:ffff::',
+      'a:b:0:100::/ffff:ffff:ffff:ff00::',
+      'a:b:0:200::/ffff:ffff:ffff:fe00::',
+      'a:b:0:400::/ffff:ffff:ffff:fc00::',
+      'a:b:0:800::/ffff:ffff:ffff:f800::',
+      'a:b:0:1000::/ffff:ffff:ffff:f000::',
+      'a:b:0:2000::/ffff:ffff:ffff:e000::',
+      'a:b:0:4000::/ffff:ffff:ffff:c000::',
+      'a:b:0:8000::/ffff:ffff:ffff:8000::',
+      'a:b:1::/ffff:ffff:ffff::',
+      'a:b:2::/ffff:ffff:fffe::',
+      'a:b:4::/ffff:ffff:fffc::',
+      'a:b:8::/ffff:ffff:ffff:8000::',
+      'a:b:8:8000::/ffff:ffff:ffff:c000::',
+      'a:b:8:c000::/ffff:ffff:ffff:e000::',
+      'a:b:8:e000::/ffff:ffff:ffff:f000::',
+      'a:b:8:f000::/ffff:ffff:ffff:f800::',
+      'a:b:8:f800::/ffff:ffff:ffff:fc00::',
+      'a:b:8:fc00::/ffff:ffff:ffff:fe00::',
+      'a:b:8:fe00::/ffff:ffff:ffff:ff00::',
+      'a:b:8:ff00::/ffff:ffff:ffff:ff80::',
+      'a:b:8:ff80::/ffff:ffff:ffff:ffc0::',
+      'a:b:8:ffc0::/ffff:ffff:ffff:ffe0::',
+      'a:b:8:ffe0::/ffff:ffff:ffff:fff0::',
+      'a:b:8:fff0::/ffff:ffff:ffff:fff8::',
+      'a:b:8:fff8::/ffff:ffff:ffff:fffc::',
+      'a:b:8:fffc::/ffff:ffff:ffff:fffe::',
+      'a:b:8:fffe::/ffff:ffff:ffff:ffff::',
+      'a:b:8:ffff::/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff',
+    ]);
+  });
+});
+
+test('deprecated constructor', () => {
   // @ts-expect-error
-  assert(new IPMatch('127.0.0.1') instanceof IPv4);
-}
-
-console.log('Tests ran fine');
+  expect(new IPMatch('127.0.0.1')).toBeInstanceOf(IPv4);
+});
