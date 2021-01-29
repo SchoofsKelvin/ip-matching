@@ -51,9 +51,9 @@ export declare class IPMask extends IPMatch {
  */
 export declare abstract class IPMatch {
     /** String indicating the type of this IPMatch, as an alternative to `instanceof`. Check subclasses for the possible values */
-    readonly type: string;
+    abstract readonly type: string;
     /** The string representation of this IPMatch. Not necessarily the exact input string that generated it */
-    readonly input: string;
+    abstract readonly input: string;
     /**
      * This used to be the generic way of converting a string to an IPRange/IPv4/... without assuming a type.
      * This class is now made abstract with a protected constructor, in favor of the new `getMatch(input)` function.

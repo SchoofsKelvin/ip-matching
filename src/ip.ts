@@ -70,9 +70,9 @@ function createCachedConvertToMasks<T>(converter: (this: T, obj: T) => IPMask[])
  */
 export abstract class IPMatch {
   /** String indicating the type of this IPMatch, as an alternative to `instanceof`. Check subclasses for the possible values */
-  public readonly type!: string;
+  public abstract readonly type: string;
   /** The string representation of this IPMatch. Not necessarily the exact input string that generated it */
-  public readonly input!: string;
+  public abstract readonly input: string;
   /**
    * This used to be the generic way of converting a string to an IPRange/IPv4/... without assuming a type.
    * This class is now made abstract with a protected constructor, in favor of the new `getMatch(input)` function.

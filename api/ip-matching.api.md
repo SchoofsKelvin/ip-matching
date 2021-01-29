@@ -38,10 +38,10 @@ export abstract class IPMatch {
     protected constructor(input: string | null);
     abstract convertToMasks(): IPMask[];
     abstract equals(match: IPMatch): boolean;
-    readonly input: string;
+    abstract readonly input: string;
     abstract matches(ip: string | IP): boolean;
     abstract matches(ip: string | IP): boolean;
-    readonly type: string;
+    abstract readonly type: string;
 }
 
 // @public
