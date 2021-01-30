@@ -98,6 +98,7 @@ export class IPv4 extends IPMatch {
     equals(match: IPMatch): boolean;
     exact(): boolean;
     getNext(): IPv4 | undefined;
+    getPrevious(): IPv4 | undefined;
     // (undocumented)
     readonly input: string;
     matches(ip: string | IP): boolean;
@@ -117,6 +118,7 @@ export class IPv6 extends IPMatch {
     equals(match: IPMatch): boolean;
     exact(): boolean;
     getNext(): IPv6 | undefined;
+    getPrevious(): IPv6 | undefined;
     // (undocumented)
     readonly input: string;
     matches(ip: string | IP): boolean;

@@ -26,6 +26,7 @@ describe(IPv4, () => {
     expect(ip.matches('10.0.0.0')).toBe(true);
     expect(ip.matches('9.255.255.255')).toBe(false);
     expect(ip.getNext()?.toString()).toBe('10.0.0.1');
+    expect(ip.getPrevious()?.toString()).toBe('9.255.255.255');
   });
   testIP('10.0.*.0', IPv4, ip => {
     expect(ip.exact()).toBe(false);
@@ -33,6 +34,7 @@ describe(IPv4, () => {
     expect(ip.matches('10.0.123.0')).toBe(true);
     expect(ip.matches('10.0.0.123')).toBe(false);
     expect(ip.getNext()?.toString()).toBe('10.0.*.1');
+    expect(ip.getPrevious()?.toString()).toBe('9.255.*.255');
   });
   testIP('10.0.*.255', IPv4, ip => {
     expect(ip.exact()).toBe(false);
@@ -40,25 +42,36 @@ describe(IPv4, () => {
     expect(ip.matches('10.0.123.255')).toBe(true);
     expect(ip.matches('10.0.0.123')).toBe(false);
     expect(ip.getNext()?.toString()).toBe('10.1.*.0');
-});
+    expect(ip.getPrevious()?.toString()).toBe('10.0.*.254');
+  });
   testIP('10.0.0.*', IPv4, ip => {
     expect(ip.exact()).toBe(false);
     expect(ip.matches('10.0.0.0')).toBe(true);
     expect(ip.matches('10.0.0.123')).toBe(true);
     expect(ip.matches('10.0.123.0')).toBe(false);
     expect(ip.getNext()?.toString()).toBe('10.0.1.*');
+    expect(ip.getPrevious()?.toString()).toBe('9.255.255.*');
   });
   testIP('10.20.30.255', IPv4, ip => {
     expect(ip.exact()).toBe(true);
     expect(ip.matches('10.20.30.255')).toBe(true);
     expect(ip.matches('10.0.0.0')).toBe(false);
     expect(ip.getNext()?.toString()).toBe('10.20.31.0');
+    expect(ip.getPrevious()?.toString()).toBe('10.20.30.254');
+  });
+  testIP('0.0.0.0', IPv4, ip => {
+    expect(ip.exact()).toBe(true);
+    expect(ip.matches('0.0.0.0')).toBe(true);
+    expect(ip.matches('0.0.0.1')).toBe(false);
+    expect(ip.getNext()?.toString()).toBe('0.0.0.1');
+    expect(ip.getPrevious()?.toString()).toBeUndefined();
   });
   testIP('255.255.255.255', IPv4, ip => {
     expect(ip.exact()).toBe(true);
     expect(ip.matches('255.255.255.255')).toBe(true);
     expect(ip.matches('255.255.255.254')).toBe(false);
     expect(ip.getNext()?.toString()).toBeUndefined();
+    expect(ip.getPrevious()?.toString()).toBe('255.255.255.254');
   });
 });
 
@@ -68,6 +81,7 @@ describe(IPv6, () => {
     expect(ip.matches('aaaa::bbbb')).toBe(true);
     expect(ip.matches('aaaa::cccc')).toBe(false);
     expect(ip.getNext()?.toString()).toBe('aaaa::bbbc');
+    expect(ip.getPrevious()?.toString()).toBe('aaaa::bbba');
   });
   testIP('aaaa::*:cccc', IPv6, ip => {
     expect(ip.exact()).toBe(false);
@@ -75,6 +89,7 @@ describe(IPv6, () => {
     expect(ip.matches('aaaa::1234:cccc')).toBe(true);
     expect(ip.matches('aaaa::cccd')).toBe(false);
     expect(ip.getNext()?.toString()).toBe('aaaa::*:cccd');
+    expect(ip.getPrevious()?.toString()).toBe('aaaa::*:cccb');
   });
   testIP('a::b', IPv6, ip => {
     expect(ip.exact()).toBe(true);
@@ -87,6 +102,7 @@ describe(IPv6, () => {
     expect(ip.matches('b:0::b')).toBe(false);
     expect(ip.matches('b:0:0:0:0:0:0:b')).toBe(false);
     expect(ip.getNext()?.toString()).toBe('a::c');
+    expect(ip.getPrevious()?.toString()).toBe('a::a');
   });
   testIP('a:0:0::B:0:C', IPv6, ip => {
     expect(ip.toString()).toBe('a::b:0:c');
@@ -94,6 +110,7 @@ describe(IPv6, () => {
     expect(ip.toFullString()).toBe('000a:0000:0000:0000:0000:000b:0000:000c');
     expect(ip.toHextets()).toEqual(['a', '0', '0', '0', '0', 'b', '0', 'c']);
     expect(ip.getNext()?.toString()).toBe('a::b:0:d');
+    expect(ip.getPrevious()?.toString()).toBe('a::b:0:b');
   });
   testIP('a:0:*::B:0:C', IPv6, ip => {
     expect(ip.toString()).toBe('a:0:*::b:0:c');
@@ -101,46 +118,61 @@ describe(IPv6, () => {
     expect(ip.toFullString()).toBe('000a:0000:*:0000:0000:000b:0000:000c');
     expect(ip.toHextets()).toEqual(['a', '0', '*', '0', '0', 'b', '0', 'c']);
     expect(ip.getNext()?.toString()).toBe('a:0:*::b:0:d');
+    expect(ip.getPrevious()?.toString()).toBe('a:0:*::b:0:b');
   });
   testIP('::ffff:a9db:d85', IPv6, ip => {
     expect(ip.toString()).toBe('::ffff:169.219.13.133');
     expect(ip.toMixedString()).toBe('::ffff:169.219.13.133');
     expect(ip.getNext()?.toString()).toBe('::ffff:169.219.13.134');
+    expect(ip.getPrevious()?.toString()).toBe('::ffff:169.219.13.132');
   });
   testIP('::ffff:a9db:*', IPv6, ip => {
     expect(ip.toString()).toBe('::ffff:169.219.*.*');
     expect(ip.toMixedString()).toBe('::ffff:169.219.*.*');
     expect(ip.getNext()?.toString()).toBe('::ffff:169.220.*.*');
+    expect(ip.getPrevious()?.toString()).toBe('::ffff:169.218.*.*');
   });
   testIP('::ffff:0:0.169.0.0', IPv6, ip => {
     expect(ip.toString()).toBe('::ffff:0:0.169.0.0');
     expect(ip.toMixedString()).toBe('::ffff:0:0.169.0.0');
     expect(ip.getNext()?.toString()).toBe('::ffff:0:0.169.0.1');
+    expect(ip.getPrevious()?.toString()).toBe('::ffff:0:0.168.255.255');
   });
   testIP('a::10.0.0.0', IPv6, ip => {
     expect(ip.toString()).toBe('a::a00:0');
     expect(ip.toMixedString()).toBe('a::10.0.0.0');
     expect(ip.getNext()?.toMixedString()).toBe('a::10.0.0.1');
+    expect(ip.getPrevious()?.toString()).toBe('a::9ff:ffff');
   });
   testIP('::', IPv6, ip => {
     expect(ip.toString()).toBe('::');
     expect(ip.getNext()?.toString()).toBe('::1');
+    expect(ip.getPrevious()?.toString()).toBeUndefined();
   });
   testIP('::1', IPv6, ip => {
     expect(ip.toString()).toBe('::1');
     expect(ip.getNext()?.toString()).toBe('::2');
+    expect(ip.getPrevious()?.toString()).toBe('::');
   });
   testIP('A::', IPv6, ip => {
     expect(ip.toString()).toBe('a::');
     expect(ip.getNext()?.toString()).toBe('a::1');
+    expect(ip.getPrevious()?.toString()).toBe('9:ffff:ffff:ffff:ffff:ffff:ffff:ffff');
   });
   testIP('::*', IPv6, ip => {
     expect(ip.toString()).toBe('::*');
     expect(ip.getNext()?.toString()).toBe('::1:*');
-});
+    expect(ip.getPrevious()?.toString()).toBeUndefined();
+  });
   testIP('::*:ffff', IPv6, ip => {
     expect(ip.toString()).toBe('::*:ffff');
     expect(ip.getNext()?.toString()).toBe('::1:*:0');
+    expect(ip.getPrevious()?.toString()).toBe('::*:fffe');
+  });
+  testIP('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff', IPv6, ip => {
+    expect(ip.toString()).toBe('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff');
+    expect(ip.getNext()?.toString()).toBeUndefined();
+    expect(ip.getPrevious()?.toString()).toBe('ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe');
   });
 });
 
