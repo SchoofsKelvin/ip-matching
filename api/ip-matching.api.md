@@ -30,7 +30,7 @@ export class IPMask extends IPMatch {
     matches(ip: string | IP): boolean;
     toString(): string;
     // (undocumented)
-    readonly type = "IPSubnetwork";
+    readonly type = "IPMask";
 }
 
 // @public

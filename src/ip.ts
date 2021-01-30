@@ -575,7 +575,7 @@ export class IPSubnetwork extends IPMatch {
 
 /** Represents an IP mask. The combination of an IP and a mask. A more complex version of IPSubnetwork. */
 export class IPMask extends IPMatch {
-  public readonly type = 'IPSubnetwork';
+  public readonly type = 'IPMask';
   public readonly input: string;
   constructor(public readonly ip: IP, public readonly mask: IP) {
     super(null);

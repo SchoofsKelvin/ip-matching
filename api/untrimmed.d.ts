@@ -28,7 +28,7 @@ export declare type IP = IPv4 | IPv6;
 export declare class IPMask extends IPMatch {
     readonly ip: IP;
     readonly mask: IP;
-    readonly type = "IPSubnetwork";
+    readonly type = "IPMask";
     readonly input: string;
     constructor(ip: IP, mask: IP);
     /** Checks whether the given IP matches this mask */
