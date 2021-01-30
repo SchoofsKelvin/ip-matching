@@ -39,6 +39,11 @@ export declare class IPMask extends IPMatch {
      * Does simplify the IP and mask in their IP form, but does not simplify e.g. `10.0.0.0/255.0.0.0` to `10.0.0.0/8`.
      */
     toString(): string;
+    /**
+     * Tries to convert this IPMask to an IPSubnetwork. This only works if this mask is a "proper" subnet mask.
+     * In other words, the bits have to be sequential. `255.255.128.0` is valid, `255.255.63.0` is not.
+     */
+    convertToSubnet(): IPSubnetwork | undefined;
     convertToMasks(): this[];
 }
 

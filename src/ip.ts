@@ -606,5 +606,41 @@ export class IPMask extends IPMatch {
   public toString() {
     return this.input;
   }
+  /**
+   * Tries to convert this IPMask to an IPSubnetwork. This only works if this mask is a "proper" subnet mask.
+   * In other words, the bits have to be sequential. `255.255.128.0` is valid, `255.255.63.0` is not.
+   */
+  public convertToSubnet(): IPSubnetwork | undefined {
+    const { ip, mask } = this;
+    const bitsPerPart = ip.type === 'IPv4' ? 8 : 16;
+    const maxPart = (1 << bitsPerPart) - 1;
+    let prefix = 0;
+    let partial = false;
+    for (const part of mask.parts) {
+      if (partial && part) {
+        this.convertToSubnet = () => undefined;
+        return undefined;
+      } else if (part === maxPart) {
+        prefix += bitsPerPart;
+      } else if (part) {
+        for (let i = bitsPerPart - 1; i >= 0; i--) {
+          const b = (part >> i) & 1;
+          if (partial && b) {
+            this.convertToSubnet = () => undefined;
+            return undefined;
+          } else if (b) {
+            prefix++;
+          } else {
+            partial = true;
+          }
+        }
+      } else {
+        partial = true;
+      }
+    }
+    const subnet = new IPSubnetwork(ip, prefix);
+    this.convertToSubnet = () => subnet;
+    return subnet;
+  }
   public convertToMasks() { return [this]; };
 }

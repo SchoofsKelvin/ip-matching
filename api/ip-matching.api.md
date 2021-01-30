@@ -18,6 +18,7 @@ export class IPMask extends IPMatch {
     constructor(ip: IP, mask: IP);
     // (undocumented)
     convertToMasks(): this[];
+    convertToSubnet(): IPSubnetwork | undefined;
     // (undocumented)
     equals(match: IPMatch): boolean;
     // (undocumented)

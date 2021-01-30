@@ -328,6 +328,54 @@ describe(IPMask, () => {
       matches.forEach(b => expect(a.equals(b)).toBe(a === b));
     });
   });
+  describe('convertToSubnet', () => {
+    const entries: [string, string][] = [
+      ['10.20.30.40', '10.20.30.40/32'],
+      ['10.20.30.50', '10.20.30.50/32'],
+      ['10.20.30.40/16', '10.20.30.40/16'],
+      ['10.20.30.40/24', '10.20.30.40/24'],
+      ['10.20.30.40/32', '10.20.30.40/32'],
+      ['10.20.30.64-10.20.30.127', '10.20.30.64/26'],
+      ['10.20.30.0-10.20.30.255', '10.20.30.0/24'],
+      ['::/::', '::/0'],
+      ['::/ffff:ffff:ffff:ffff::', '::/64'],
+      ['::/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff', '::/128'],
+      ['a::bc:1234', 'a::bc:1234/128'],
+      ['a::bc:5678', 'a::bc:5678/128'],
+      ['a::bc:1234/64', 'a::bc:1234/64'],
+      ['a::bc:1234/112', 'a::bc:1234/112'],
+      ['a::bc:1234/128', 'a::bc:1234/128'],
+      ['a::bc:ff00-a::bc:ff0f', 'a::bc:ff00/124'],
+      ['a::bc:0-a::bc:ffff', 'a::bc:0/112'],
+    ];
+    test.each(entries)('expect %s to indirectly convert to %s', (inputStr, outputStr) => {
+      const input = getMatch(inputStr);
+      const output = expectGetMatch(outputStr, IPSubnetwork);
+      const masks = input.convertToMasks();
+      expect(masks.length).toBe(1);
+      const [mask] = masks;
+      const subnet1 = mask.convertToSubnet();
+      expect(subnet1?.toString()).toBe(output.toString());
+      const subnet2 = mask.convertToSubnet();
+      expect(subnet1).toBe(subnet2);
+    });
+    const invalid: string[] = [
+      '0.0.0.0/255.0.255.255',
+      '0.0.0.0/255.0.0.255',
+      '0.0.0.0/255.0.0.63',
+      '0.0.0.0/255.255.255.63',
+      '0.0.0.0/254.255.255.255',
+      '0.0.0.0/254.255.255.63',
+      '::/::ffff',
+      '::/ffff::ffff',
+      '::/ffff:0:ffff::',
+      '::/f0ff::',
+    ];
+    test.each(invalid)('expect %s to not be convertable to a subnet', inputStr => {
+      const input = expectGetMatch(inputStr, IPMask);
+      expect(input.convertToSubnet()?.toString()).toBeUndefined();
+    });
+  });
 });
 
 describe(matches, () => {
