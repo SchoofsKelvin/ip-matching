@@ -166,15 +166,19 @@ export class IPv4 extends IPMatch {
     return [new IPMask(lower, partsToIP(ip.parts.map(v => v === -1 ? 0 : 255)))];
   });
   public convertToMasks() { return IPv4.convertToMasks(this); }
-  /** Returns the next address, or undefined for `255.255.255.255` */
-  public getNext(): IP | undefined {
+  /**
+   * Returns the next address, or undefined for `255.255.255.255`.
+   * In case of a non-exact IP, the wildcard parts are ignored.
+   * E.g. getNext for `10.0.*.255` returns `10.1.*.0`
+   */
+  public getNext(): IPv4 | undefined {
     const newParts = [...this.parts];
     for (let i = newParts.length - 1; i >= 0; i--) {
       if (newParts[i] === 255) {
         newParts[i] = 0;
-      } else {
+      } else if (newParts[i] !== -1) {
         newParts[i]++;
-        return partsToIP(newParts);
+        return partsToIP(newParts) as IPv4;
       }
     }
     return undefined;
@@ -333,15 +337,19 @@ export class IPv6 extends IPMatch {
     return [new IPMask(lower, partsToIP(ip.parts.map(v => v === -1 ? 0 : 0xffff)))];
   });
   public convertToMasks() { return IPv6.convertToMasks(this); }
-  /** Returns the next address, or undefined for `ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff` */
-  public getNext(): IP | undefined {
+  /**
+   * Returns the next address, or undefined for `ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff`.
+   * In case of a non-exact IP, the wildcard parts are ignored.
+   * E.g. getNext for `::0:*:ffff` returns `::1:*:0`
+   */
+  public getNext(): IPv6 | undefined {
     const newParts = [...this.parts];
     for (let i = newParts.length - 1; i >= 0; i--) {
       if (newParts[i] === 0xFFFF) {
         newParts[i] = 0;
-      } else {
+      } else if (newParts[i] !== -1) {
         newParts[i]++;
-        return partsToIP(newParts);
+        return partsToIP(newParts) as IPv6;
       }
     }
     return undefined;

@@ -156,8 +156,12 @@ export declare class IPv4 extends IPMatch {
     /** @internal */
     private static convertToMasks;
     convertToMasks(): IPMask[];
-    /** Returns the next address, or undefined for `255.255.255.255` */
-    getNext(): IP | undefined;
+    /**
+     * Returns the next address, or undefined for `255.255.255.255`.
+     * In case of a non-exact IP, the wildcard parts are ignored.
+     * E.g. getNext for `10.0.*.255` returns `10.1.*.0`
+     */
+    getNext(): IPv4 | undefined;
 }
 
 /** Represents an IPv6 address, optionall with wildcards */
@@ -207,8 +211,12 @@ export declare class IPv6 extends IPMatch {
     /** @internal */
     private static convertToMasks;
     convertToMasks(): IPMask[];
-    /** Returns the next address, or undefined for `ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff` */
-    getNext(): IP | undefined;
+    /**
+     * Returns the next address, or undefined for `ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff`.
+     * In case of a non-exact IP, the wildcard parts are ignored.
+     * E.g. getNext for `::0:*:ffff` returns `::1:*:0`
+     */
+    getNext(): IPv6 | undefined;
 }
 
 /**
