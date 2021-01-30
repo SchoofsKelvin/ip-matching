@@ -169,7 +169,7 @@ export class IPv4 extends IPMatch {
   /** Returns the next address, or undefined for `255.255.255.255` */
   public getNext(): IP | undefined {
     const newParts = [...this.parts];
-    for (let i = newParts.length - 1; i >= 0; i++) {
+    for (let i = newParts.length - 1; i >= 0; i--) {
       if (newParts[i] === 255) {
         newParts[i] = 0;
       } else {
