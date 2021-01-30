@@ -181,6 +181,30 @@ describe(IPSubnetwork, () => {
     expect(subnet.matches('a:b:c:cfff::')).toBe(false);
     expect(subnet.matches('c::')).toBe(false);
   });
+  testIP('::/0', IPSubnetwork, subnet => {
+    expect(subnet.toString()).toBe('::/0');
+    expect(subnet.matches('::')).toBe(true);
+    expect(subnet.matches('a::b')).toBe(true);
+    expect(subnet.getFirst().toString()).toBe('::');
+    expect(subnet.getLast().toString()).toBe('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff');
+    expect(subnet.bits).toBe(0);
+  });
+  testIP('::/64', IPSubnetwork, subnet => {
+    expect(subnet.toString()).toBe('::/64');
+    expect(subnet.matches('::')).toBe(true);
+    expect(subnet.matches('ffff::')).toBe(false);
+    expect(subnet.getFirst().toString()).toBe('::');
+    expect(subnet.getLast().toString()).toBe('::ffff:ffff:ffff:ffff');
+    expect(subnet.bits).toBe(64);
+  });
+  testIP('::/128', IPSubnetwork, subnet => {
+    expect(subnet.toString()).toBe('::/128');
+    expect(subnet.matches('::')).toBe(true);
+    expect(subnet.matches('::1')).toBe(false);
+    expect(subnet.getFirst().toString()).toBe('::');
+    expect(subnet.getLast().toString()).toBe('::');
+    expect(subnet.bits).toBe(128);
+  });
 });
 
 describe(IPMask, () => {

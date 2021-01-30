@@ -113,7 +113,7 @@ export declare class IPSubnetwork extends IPMatch {
     readonly type = "IPSubnetwork";
     readonly input: string;
     protected range: IPRange;
-    /** Bits has to be in the range 1-32 for IPv4 and 1-128 for IPv6 */
+    /** Bits has to be in the range 0-32 for IPv4 and 0-128 for IPv6 */
     constructor(ip: IP, bits: number);
     /** Checks whether the given IP lies in this subnetwork */
     matches(ip: string | IP): boolean;

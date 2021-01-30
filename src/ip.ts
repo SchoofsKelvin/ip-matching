@@ -44,7 +44,7 @@ export function getMatch(input: string | IPMatch): IPMatch {
     ip = getIP(split[0]);
     if (!ip || !ip.exact()) throw new Error('Expected a valid (exact) IP for a subnetwork');
     const bits = Number(split[1]);
-    if (bits) return new IPSubnetwork(ip, bits);
+    if (Number.isInteger(bits)) return new IPSubnetwork(ip, bits);
     const mask = getIP(split[1]);
     if (mask) return new IPMask(ip, mask);
     throw new Error('A subnetwork or mask looks like \'IP/bits\' or \'IP/mask\' e.g. \'::1/64\' or \'::1/aa::\'');
@@ -477,12 +477,12 @@ export class IPSubnetwork extends IPMatch {
   public readonly type = 'IPSubnetwork';
   public readonly input: string;
   protected range: IPRange;
-  /** Bits has to be in the range 1-32 for IPv4 and 1-128 for IPv6 */
+  /** Bits has to be in the range 0-32 for IPv4 and 0-128 for IPv6 */
   constructor(ip: IP, public readonly bits: number) {
     super(null);
     const maxBits = (ip.type === 'IPv4' ? 32 : 128);
-    if (bits < 1 || bits > maxBits) {
-      throw new Error(`A ${ip.type} subnetwork's bits should be in the range of 1-${maxBits}`);
+    if (bits < 0 || bits > maxBits) {
+      throw new Error(`A ${ip.type} subnetwork's bits should be in the range of 1-${maxBits}, got ${bits} instead`);
     }
     let lower = new ((ip as any).constructor)(ip.input) as IP;
     let upper = new ((ip as any).constructor)(ip.input) as IP;
