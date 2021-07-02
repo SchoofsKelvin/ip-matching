@@ -509,13 +509,11 @@ export class IPRange extends IPMatch {
   private static convertToSubnets = createCached<IPRange, IPSubnetwork[]>(SYM_CTSubnets, range => {
     const result: IPSubnetwork[] = [];
     const { left, right } = range;
-    const { parts: rParts } = right;
-    const maxBits = left.type === 'IPv4' ? 32 : 128;
-    const bitsPerPart = left.type === 'IPv4' ? 8 : 16;
-    const rBits = rParts.reduce<number[]>((b, p) => [...b, ...toBits(p, bitsPerPart)], []);
+    const maxBits = left.bits;
+    const rBits = right.toBits();
     let current: IP | undefined = left;
     while (current && range.isLowerOrEqual(current, right)) {
-      const cBits = current.parts.reduce<number[]>((b, p) => [...b, ...toBits(p, bitsPerPart)], []);
+      const cBits = current.toBits();
       let hostBits = 0;
       for (let i = cBits.length - 1; i >= 0; i--) if (cBits[i]) break; else hostBits++;
       let maxHostBits = 0;
@@ -575,13 +573,12 @@ export class IPSubnetwork extends IPMatch {
   /** Bits has to be in the range 0-32 for IPv4 and 0-128 for IPv6 */
   constructor(ip: IP, public readonly bits: number) {
     super(null);
-    const maxBits = (ip.type === 'IPv4' ? 32 : 128);
-    if (bits < 0 || bits > maxBits) {
-      throw new Error(`A ${ip.type} subnetwork's bits should be in the range of 1-${maxBits}, got ${bits} instead`);
+    if (bits < 0 || bits > ip.bits) {
+      throw new Error(`A ${ip.type} subnetwork's bits should be in the range of 1-${ip.bits}, got ${bits} instead`);
     }
     let lower = new ((ip as any).constructor)(ip.input) as IP;
     let upper = new ((ip as any).constructor)(ip.input) as IP;
-    const bitsPerPart = ip.type === 'IPv4' ? 8 : 16;
+    const bitsPerPart = ip.bits / ip.parts.length;
     for (let i = 0; i < ip.parts.length; i += 1) {
       lower.parts[i] = getLowerPart(ip.parts[i], bits, bitsPerPart);
       upper.parts[i] = getUpperPart(lower.parts[i], bits, bitsPerPart);
@@ -605,9 +602,9 @@ export class IPSubnetwork extends IPMatch {
   }
   /** @internal */
   private static convertToMasks = createCachedConvertToMasks<IPSubnetwork>(subnet => {
-    const isIPv4 = subnet.range.left.type === 'IPv4';
+    const { left } = subnet.range;
     const parts: number[] = [];
-    const bitsPerPart = isIPv4 ? 8 : 16;
+    const bitsPerPart = left.bits / left.parts.length;
     const max_part = (2 ** bitsPerPart) - 1;
     let { bits } = subnet;
     while (bits > 0) {
@@ -616,7 +613,7 @@ export class IPSubnetwork extends IPMatch {
       parts.push((max_part >> neg) << neg);
       bits = bits - adding;
     }
-    for (let i = parts.length, max = isIPv4 ? 4 : 8; i < max; i++) parts[i] = 0;
+    for (let i = parts.length, max = left.parts.length; i < max; i++) parts[i] = 0;
     return [new IPMask(subnet.range.left, partsToIP(parts))];
   });
   public convertToMasks() { return IPSubnetwork.convertToMasks(this); }
@@ -661,7 +658,7 @@ export class IPMask extends IPMatch {
   }
   /** @internal */
   private static convertToSubnet = createCached<IPMask, IPSubnetwork | undefined>(SYM_CTSubnet, ({ ip, mask }) => {
-    const bitsPerPart = ip.type === 'IPv4' ? 8 : 16;
+    const bitsPerPart = ip.bits / ip.parts.length;
     const maxPart = (1 << bitsPerPart) - 1;
     let prefix = 0;
     let partial = false;
