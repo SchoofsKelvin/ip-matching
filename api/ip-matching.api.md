@@ -44,7 +44,7 @@ export abstract class IPMatch {
     abstract getAmount(): number;
     abstract readonly input: string;
     abstract matches(ip: string | IP): boolean;
-    abstract matches(ip: string | IP): boolean;
+    abstract toString(): string;
     abstract readonly type: string;
 }
 

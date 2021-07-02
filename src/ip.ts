@@ -121,7 +121,7 @@ export abstract class IPMatch {
    */
   public abstract matches(ip: string | IP): boolean;
   /** Each subclass formats itself in a specific way. IPv6 also has a bunch of extra string methods. Check their documentation */
-  public abstract matches(ip: string | IP): boolean;
+  public abstract toString(): string;
   /**
    * Checks whether this IPMatch equals the given match. The match type matters, e.g. the IPv4 `10.0.0.0` and 
    * the IPSubnetwork `10.0.0.0/32` will result in this method returning false, even though they both only match `10.0.0.0`.
