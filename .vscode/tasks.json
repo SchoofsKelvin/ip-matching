@@ -27,7 +27,16 @@
 			"type": "npm",
 			"script": "watch-api",
 			"group": "build",
-			"problemMatcher": [],
+			"problemMatcher": {
+				"pattern": {
+					"regexp": "[^\\s\\S]"
+				},
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "\\[nodemon\\] starting",
+					"endsPattern": "API Extractor completed"
+				}
+			},
 			"label": "API - Watch",
 			"detail": "api-extractor",
 			"isBackground": true
