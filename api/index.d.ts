@@ -21,7 +21,7 @@ export declare function getIP(input: string | IP): IP | null;
  */
 export declare function getMatch(input: string | IPMatch): IPMatch;
 
-/** Represents either an IPv4 or an IPv6, aka single addresses */
+/** Represents either an IPv4 or an IPv6, aka single addresses (or wildcard ones) */
 export declare type IP = IPv4 | IPv6;
 
 /** Represents an IP mask. The combination of an IP and a mask. A more complex version of IPSubnetwork. */
@@ -39,12 +39,14 @@ export declare class IPMask extends IPMatch {
      * Does simplify the IP and mask in their IP form, but does not simplify e.g. `10.0.0.0/255.0.0.0` to `10.0.0.0/8`.
      */
     toString(): string;
+    
     /**
      * Tries to convert this IPMask to an IPSubnetwork. This only works if this mask is a "proper" subnet mask.
      * In other words, the bits have to be sequential. `255.255.128.0` is valid, `255.255.63.0` is not.
+     * When this is not the case, `undefined` is returned instead.
      */
     convertToSubnet(): IPSubnetwork | undefined;
-    convertToMasks(): this[];
+    convertToMasks(): IPMask[];
 }
 
 /**
@@ -101,6 +103,7 @@ export declare class IPRange extends IPMatch {
     equals(match: IPMatch): boolean;
     /** Converts this IPRange to a string, by joining the two bounds with a dash, e.g. "IP1-IP2" */
     toString(): string;
+    
     /** Converts this IPRange to an optimized list of (CIDR) IPSubnetworks */
     convertToSubnets(): IPSubnetwork[];
     

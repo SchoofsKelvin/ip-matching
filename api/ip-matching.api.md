@@ -17,7 +17,7 @@ export type IP = IPv4 | IPv6;
 export class IPMask extends IPMatch {
     constructor(ip: IP, mask: IP);
     // (undocumented)
-    convertToMasks(): this[];
+    convertToMasks(): IPMask[];
     convertToSubnet(): IPSubnetwork | undefined;
     // (undocumented)
     equals(match: IPMatch): boolean;

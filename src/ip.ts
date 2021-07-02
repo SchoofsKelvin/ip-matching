@@ -52,18 +52,28 @@ export function getMatch(input: string | IPMatch): IPMatch {
   throw new Error('Invalid IP (range/subnetwork)');
 }
 
-/** @internal Symbol to cache `convertToMasks` calls */
-const SYMBOL_CONVERTED_RANGES = Symbol('convertToMasks');
-/** @internal Type of the cached function we create */
-type CachedConvertToMask<T> = (value: T) => IPMask[];
-/** @internal Creates a wrapper around the given converter function to cache results */
-function createCachedConvertToMasks<T>(converter: (obj: T) => IPMask[]): CachedConvertToMask<T> {
-  return function (obj: T & { [SYMBOL_CONVERTED_RANGES]?: IPMask[] }) {
-    const ranges = obj[SYMBOL_CONVERTED_RANGES];
-    if (ranges) return ranges;
-    return obj[SYMBOL_CONVERTED_RANGES] = converter.call(obj, obj);
+/** @internal Utility function to create cached functions */
+function createCached<T, R>(symbol: symbol, func: (value: T) => R): (value: T) => R {
+  return (value: T): R => {
+    if (symbol in value) return (value as any)[symbol] as R;
+    return (value as any)[symbol] = func(value);
   };
 }
+
+/** @internal Symbol to cache `convertToMasks` calls */
+const SYM_CTMasks = Symbol('convertToMasks');
+/** @internal Creates a wrapper around the given converter function to cache results */
+function createCachedConvertToMasks<T>(converter: (obj: T) => IPMask[]): (value: T) => IPMask[] {
+  const cached = createCached(SYM_CTMasks, converter);
+  // Doing it this way so that even though the underlying array is only calculated once, we
+  // return a copy of it every invocation, so the user can freely modify the resulting array
+  return obj => [...cached(obj)];
+}
+
+/** @internal Symbol to cache `convertToSubnet` calls */
+const SYM_CTSubnet = Symbol('convertToSubnet');
+/** @internal Symbol to cache `convertToSubnets` calls */
+const SYM_CTSubnets = Symbol('convertToSubnets');
 
 /**
  * Superclass of the IPv4, IPv6, IPRange and IPSubnetwork classes.
@@ -390,7 +400,7 @@ export class IPv6 extends IPMatch {
   }
 }
 
-/** Represents either an IPv4 or an IPv6, aka single addresses */
+/** Represents either an IPv4 or an IPv6, aka single addresses (or wildcard ones) */
 export type IP = IPv4 | IPv6;
 
 /**
@@ -454,16 +464,16 @@ export class IPRange extends IPMatch {
   public toString() {
     return this.input;
   }
-  /** Converts this IPRange to an optimized list of (CIDR) IPSubnetworks */
-  public convertToSubnets(): IPSubnetwork[] {
+  /** @internal */
+  private static convertToSubnets = createCached<IPRange, IPSubnetwork[]>(SYM_CTSubnets, range => {
     const result: IPSubnetwork[] = [];
-    const { left, right } = this;
+    const { left, right } = range;
     const { parts: rParts } = right;
     const maxBits = left.type === 'IPv4' ? 32 : 128;
     const bitsPerPart = left.type === 'IPv4' ? 8 : 16;
     const rBits = rParts.reduce<number[]>((b, p) => [...b, ...toBits(p, bitsPerPart)], []);
     let current: IP | undefined = left;
-    while (current && this.isLowerOrEqual(current, right)) {
+    while (current && range.isLowerOrEqual(current, right)) {
       const cBits = current.parts.reduce<number[]>((b, p) => [...b, ...toBits(p, bitsPerPart)], []);
       let hostBits = 0;
       for (let i = cBits.length - 1; i >= 0; i--) if (cBits[i]) break; else hostBits++;
@@ -481,7 +491,9 @@ export class IPRange extends IPMatch {
       current = subnet.getLast().getNext();
     }
     return result;
-  }
+  });
+  /** Converts this IPRange to an optimized list of (CIDR) IPSubnetworks */
+  public convertToSubnets(): IPSubnetwork[] { return [...IPRange.convertToSubnets(this)]; }
   /** @internal */
   private static convertToMasks = createCachedConvertToMasks<IPRange>(range =>
     range.convertToSubnets().reduce<IPMask[]>((r, subnet) => [...r, ...subnet.convertToMasks()], [])
@@ -606,19 +618,14 @@ export class IPMask extends IPMatch {
   public toString() {
     return this.input;
   }
-  /**
-   * Tries to convert this IPMask to an IPSubnetwork. This only works if this mask is a "proper" subnet mask.
-   * In other words, the bits have to be sequential. `255.255.128.0` is valid, `255.255.63.0` is not.
-   */
-  public convertToSubnet(): IPSubnetwork | undefined {
-    const { ip, mask } = this;
+  /** @internal */
+  private static convertToSubnet = createCached<IPMask, IPSubnetwork | undefined>(SYM_CTSubnet, ({ ip, mask }) => {
     const bitsPerPart = ip.type === 'IPv4' ? 8 : 16;
     const maxPart = (1 << bitsPerPart) - 1;
     let prefix = 0;
     let partial = false;
     for (const part of mask.parts) {
       if (partial && part) {
-        this.convertToSubnet = () => undefined;
         return undefined;
       } else if (part === maxPart) {
         prefix += bitsPerPart;
@@ -626,7 +633,6 @@ export class IPMask extends IPMatch {
         for (let i = bitsPerPart - 1; i >= 0; i--) {
           const b = (part >> i) & 1;
           if (partial && b) {
-            this.convertToSubnet = () => undefined;
             return undefined;
           } else if (b) {
             prefix++;
@@ -638,9 +644,13 @@ export class IPMask extends IPMatch {
         partial = true;
       }
     }
-    const subnet = new IPSubnetwork(ip, prefix);
-    this.convertToSubnet = () => subnet;
-    return subnet;
-  }
-  public convertToMasks() { return [this]; };
+    return new IPSubnetwork(ip, prefix);
+  })
+  /**
+   * Tries to convert this IPMask to an IPSubnetwork. This only works if this mask is a "proper" subnet mask.
+   * In other words, the bits have to be sequential. `255.255.128.0` is valid, `255.255.63.0` is not.
+   * When this is not the case, `undefined` is returned instead.
+   */
+  public convertToSubnet(): IPSubnetwork | undefined { return IPMask.convertToSubnet(this); }
+  public convertToMasks(): IPMask[] { return [this]; };
 }
