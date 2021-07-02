@@ -47,6 +47,8 @@ export declare class IPMask extends IPMatch {
      */
     convertToSubnet(): IPSubnetwork | undefined;
     convertToMasks(): IPMask[];
+    /** Returns the amounts of addresses this mask matches */
+    getAmount(): number;
 }
 
 /**

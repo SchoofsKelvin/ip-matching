@@ -21,6 +21,7 @@ export class IPMask extends IPMatch {
     convertToSubnet(): IPSubnetwork | undefined;
     // (undocumented)
     equals(match: IPMatch): boolean;
+    getAmount(): number;
     // (undocumented)
     readonly input: string;
     // (undocumented)

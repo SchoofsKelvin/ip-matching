@@ -691,4 +691,8 @@ export class IPMask extends IPMatch {
    */
   public convertToSubnet(): IPSubnetwork | undefined { return IPMask.convertToSubnet(this); }
   public convertToMasks(): IPMask[] { return [this]; };
+  /** Returns the amounts of addresses this mask matches */
+  public getAmount(): number {
+    return this.mask.toBits().reduce((p, b) => b ? p + p : p, 1);
+  }
 }
