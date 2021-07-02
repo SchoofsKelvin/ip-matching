@@ -134,6 +134,8 @@ export abstract class IPMatch {
    * this method, you might also be interested in checking `convertToSubnets` out.
    */
   public abstract convertToMasks(): IPMask[];
+  /** Retuns the amount of unique IP addresses this IPMatch would match */
+  public abstract getAmount(): number;
 }
 
 /** Represents an IPv4 address, optionall with wildcards */
@@ -193,6 +195,9 @@ export class IPv4 extends IPMatch {
     return [new IPMask(lower, partsToIP(ip.parts.map(v => v === -1 ? 0 : 255)))];
   });
   public convertToMasks() { return IPv4.convertToMasks(this); }
+  public getAmount(): number {
+    return this.parts.reduce((t, p) => p === -1 ? t * 256 : t, 1);
+  }
   /**
    * Returns the previous address, or undefined for `0.0.0.0`.
    * In case of a non-exact IP, the wildcard parts are ignored.
@@ -399,6 +404,9 @@ export class IPv6 extends IPMatch {
     return [new IPMask(lower, partsToIP(ip.parts.map(v => v === -1 ? 0 : 0xffff)))];
   });
   public convertToMasks() { return IPv6.convertToMasks(this); }
+  public getAmount(): number {
+    return this.parts.reduce((t, p) => p === -1 ? t * 0x10000 : t, 1);
+  }
   /**
    * Returns the previous address, or undefined for `::`.
    * In case of a non-exact IP, the wildcard parts are ignored.
@@ -538,6 +546,20 @@ export class IPRange extends IPMatch {
     range.convertToSubnets().reduce<IPMask[]>((r, subnet) => [...r, ...subnet.convertToMasks()], [])
   );
   public convertToMasks() { return IPRange.convertToMasks(this); }
+  public getAmount(): number {
+    const lParts = this.left.parts;
+    const rParts = [...this.right.parts];
+    const maxPart = 2 ** (this.left.bits / lParts.length);
+    for (let i = 0; i < rParts.length; i++) {
+      let v = rParts[i] - lParts[i];
+      if (v < 0) {
+        v += maxPart;
+        rParts[i - 1] -= 1;
+      }
+      rParts[i] = v;
+    }
+    return rParts.reduce((t, s) => (t * maxPart) + s, 0) + 1;
+  }
   /** Returns the first IP address in this range */
   public getFirst(): IP { return this.left; }
   /** Returns the last IP address in this range */
@@ -617,6 +639,9 @@ export class IPSubnetwork extends IPMatch {
     return [new IPMask(subnet.range.left, partsToIP(parts))];
   });
   public convertToMasks() { return IPSubnetwork.convertToMasks(this); }
+  public getAmount(): number {
+    return 2 ** (this.range.left.bits - this.bits);
+  }
   /** Returns the first IP address in this range */
   public getFirst(): IP { return this.range.left; }
   /** Returns the last IP address in this range */
@@ -659,7 +684,7 @@ export class IPMask extends IPMatch {
   /** @internal */
   private static convertToSubnet = createCached<IPMask, IPSubnetwork | undefined>(SYM_CTSubnet, ({ ip, mask }) => {
     const bitsPerPart = ip.bits / ip.parts.length;
-    const maxPart = (1 << bitsPerPart) - 1;
+    const maxPart = (2 ** bitsPerPart) - 1;
     let prefix = 0;
     let partial = false;
     for (const part of mask.parts) {
@@ -691,8 +716,7 @@ export class IPMask extends IPMatch {
    */
   public convertToSubnet(): IPSubnetwork | undefined { return IPMask.convertToSubnet(this); }
   public convertToMasks(): IPMask[] { return [this]; };
-  /** Returns the amounts of addresses this mask matches */
   public getAmount(): number {
-    return this.mask.toBits().reduce((p, b) => b ? p + p : p, 1);
+    return this.mask.toBits().reduce((p, b) => b ? p : (p + p), 1);
   }
 }

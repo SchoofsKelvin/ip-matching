@@ -21,6 +21,7 @@ export class IPMask extends IPMatch {
     convertToSubnet(): IPSubnetwork | undefined;
     // (undocumented)
     equals(match: IPMatch): boolean;
+    // (undocumented)
     getAmount(): number;
     // (undocumented)
     readonly input: string;
@@ -40,6 +41,7 @@ export abstract class IPMatch {
     protected constructor(input: string | null);
     abstract convertToMasks(): IPMask[];
     abstract equals(match: IPMatch): boolean;
+    abstract getAmount(): number;
     abstract readonly input: string;
     abstract matches(ip: string | IP): boolean;
     abstract matches(ip: string | IP): boolean;
@@ -54,6 +56,8 @@ export class IPRange extends IPMatch {
     convertToSubnets(): IPSubnetwork[];
     // (undocumented)
     equals(match: IPMatch): boolean;
+    // (undocumented)
+    getAmount(): number;
     getFirst(): IP;
     getLast(): IP;
     // (undocumented)
@@ -79,6 +83,8 @@ export class IPSubnetwork extends IPMatch {
     convertToMasks(): IPMask[];
     // (undocumented)
     equals(match: IPMatch): boolean;
+    // (undocumented)
+    getAmount(): number;
     getFirst(): IP;
     getLast(): IP;
     // (undocumented)
@@ -102,6 +108,8 @@ export class IPv4 extends IPMatch {
     equals(match: IPMatch): boolean;
     exact(): boolean;
     static fromBits(bits: number[]): IPv4;
+    // (undocumented)
+    getAmount(): number;
     getNext(): IPv4 | undefined;
     getPrevious(): IPv4 | undefined;
     // (undocumented)
@@ -126,6 +134,8 @@ export class IPv6 extends IPMatch {
     equals(match: IPMatch): boolean;
     exact(): boolean;
     static fromBits(bits: number[]): IPv6;
+    // (undocumented)
+    getAmount(): number;
     getNext(): IPv6 | undefined;
     getPrevious(): IPv6 | undefined;
     // (undocumented)

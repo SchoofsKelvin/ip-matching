@@ -457,6 +457,43 @@ describe('convertToMasks', () => {
   });
 });
 
+describe('getAmount', () => {
+  describe(IPv4, () => {
+    testIP('10.0.0.0', IPv4, ip => expect(ip.getAmount()).toBe(1));
+    testIP('10.0.*.0', IPv4, ip => expect(ip.getAmount()).toBe(256));
+    testIP('10.*.0.*', IPv4, ip => expect(ip.getAmount()).toBe(256 * 256));
+  });
+  describe(IPv6, () => {
+    testIP('::', IPv6, ip => expect(ip.getAmount()).toBe(1));
+    testIP('::*:0', IPv6, ip => expect(ip.getAmount()).toBe(0x10000));
+    testIP('0:*::*:0', IPv6, ip => expect(ip.getAmount()).toBe(0x10000 * 0x10000));
+  });
+  describe(IPRange, () => {
+    testIP('10.0.0.0-10.0.0.0', IPRange, ip => expect(ip.getAmount()).toBe(1));
+    testIP('10.0.5.0-10.1.6.7', IPRange, ip => expect(ip.getAmount()).toBe(256 * 256 + 256 + 8));
+    testIP('0.0.0.0-255.255.255.255', IPRange, ip => expect(ip.getAmount()).toBe(2 ** 32));
+    testIP('::5-::5', IPRange, ip => expect(ip.getAmount()).toBe(1));
+    testIP('::1:2:3-::2:5:7', IPRange, ip => expect(ip.getAmount()).toBe(0x10000 * 0x10000 + 0x10000 * 3 + 5));
+    testIP('::-ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff', IPRange, ip => expect(ip.getAmount()).toBe(2 ** 128));
+  });
+  describe(IPSubnetwork, () => {
+    testIP('10.1.2.3/32', IPSubnetwork, ip => expect(ip.getAmount()).toBe(1));
+    testIP('10.1.2.3/30', IPSubnetwork, ip => expect(ip.getAmount()).toBe(2 ** 2));
+    testIP('10.1.2.3/10', IPSubnetwork, ip => expect(ip.getAmount()).toBe(2 ** 22));
+    testIP('a:b:c::d:e:f/128', IPSubnetwork, ip => expect(ip.getAmount()).toBe(1));
+    testIP('a:b:c::d:e:f/100', IPSubnetwork, ip => expect(ip.getAmount()).toBe(2 ** 28));
+    testIP('a:b:c::d:e:f/10', IPSubnetwork, ip => expect(ip.getAmount()).toBe(2 ** 118));
+  });
+  describe(IPMask, () => {
+    testIP('10.1.2.3/255.255.255.255', IPMask, ip => expect(ip.getAmount()).toBe(1));
+    testIP('10.1.2.3/255.255.255.252', IPMask, ip => expect(ip.getAmount()).toBe(4));
+    testIP('10.1.2.3/255.252.255.252', IPMask, ip => expect(ip.getAmount()).toBe(16));
+    testIP('a:b:c::d:e:f/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff', IPMask, ip => expect(ip.getAmount()).toBe(1));
+    testIP('a:b:c::d:e:f/ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffd', IPMask, ip => expect(ip.getAmount()).toBe(2));
+    testIP('a:b:c::d:e:f/ffff:ffff:f4ff:ffff:ffff:ff5f:ffff:ff00', IPMask, ip => expect(ip.getAmount()).toBe(2 ** 13));
+  });
+});
+
 test('deprecated constructor', () => {
   // @ts-expect-error
   expect(new IPMatch('127.0.0.1')).toBeInstanceOf(IPv4);

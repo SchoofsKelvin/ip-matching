@@ -47,7 +47,6 @@ export declare class IPMask extends IPMatch {
      */
     convertToSubnet(): IPSubnetwork | undefined;
     convertToMasks(): IPMask[];
-    /** Returns the amounts of addresses this mask matches */
     getAmount(): number;
 }
 
@@ -90,6 +89,8 @@ export declare abstract class IPMatch {
      * this method, you might also be interested in checking `convertToSubnets` out.
      */
     abstract convertToMasks(): IPMask[];
+    /** Retuns the amount of unique IP addresses this IPMatch would match */
+    abstract getAmount(): number;
 }
 
 /** Represents a range of IP addresses, according to their numerical value */
@@ -110,6 +111,7 @@ export declare class IPRange extends IPMatch {
     convertToSubnets(): IPSubnetwork[];
     
     convertToMasks(): IPMask[];
+    getAmount(): number;
     /** Returns the first IP address in this range */
     getFirst(): IP;
     /** Returns the last IP address in this range */
@@ -132,6 +134,7 @@ export declare class IPSubnetwork extends IPMatch {
     toString(): string;
     
     convertToMasks(): IPMask[];
+    getAmount(): number;
     /** Returns the first IP address in this range */
     getFirst(): IP;
     /** Returns the last IP address in this range */
@@ -163,6 +166,7 @@ export declare class IPv4 extends IPMatch {
     toString(): string;
     
     convertToMasks(): IPMask[];
+    getAmount(): number;
     /**
      * Returns the previous address, or undefined for `0.0.0.0`.
      * In case of a non-exact IP, the wildcard parts are ignored.
@@ -231,6 +235,7 @@ export declare class IPv6 extends IPMatch {
     toString(): string;
     
     convertToMasks(): IPMask[];
+    getAmount(): number;
     /**
      * Returns the previous address, or undefined for `::`.
      * In case of a non-exact IP, the wildcard parts are ignored.
