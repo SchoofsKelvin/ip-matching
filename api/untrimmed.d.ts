@@ -180,6 +180,8 @@ export declare class IPv4 extends IPMatch {
     getNext(): IPv4 | undefined;
     /** Converts this IP to an array of bits, e.g. `[1, 1, 0, 0, 0, ...]` for `192.0.0.0`. */
     toBits(): number[];
+    /** Converts an array of 32 bits to an IPv4, e.g. `192.0.0.0` for `[1, 1, 0, 0, 0, ...]` */
+    static fromBits(bits: number[]): IPv4;
 }
 
 /** Represents an IPv6 address, optionall with wildcards */
@@ -243,6 +245,8 @@ export declare class IPv6 extends IPMatch {
     getNext(): IPv6 | undefined;
     /** Converts this IP to an array of bits, e.g. `[1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, ...]` for `f8::`. */
     toBits(): number[];
+    /** Converts an array of 128 bits to an IPv6, e.g. `f8::` for `[1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, ...]` */
+    static fromBits(bits: number[]): IPv6;
 }
 
 /**

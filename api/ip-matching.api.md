@@ -98,6 +98,7 @@ export class IPv4 extends IPMatch {
     // (undocumented)
     equals(match: IPMatch): boolean;
     exact(): boolean;
+    static fromBits(bits: number[]): IPv4;
     getNext(): IPv4 | undefined;
     getPrevious(): IPv4 | undefined;
     // (undocumented)
@@ -119,6 +120,7 @@ export class IPv6 extends IPMatch {
     // (undocumented)
     equals(match: IPMatch): boolean;
     exact(): boolean;
+    static fromBits(bits: number[]): IPv6;
     getNext(): IPv6 | undefined;
     getPrevious(): IPv6 | undefined;
     // (undocumented)

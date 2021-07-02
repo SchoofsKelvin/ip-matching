@@ -24,6 +24,14 @@ function toBits(value: number, bits: number): number[] {
   return result.reverse();
 }
 
+/** `fromBits([0, 0, 1, 0, 1, 1, 0, 1, 0, 1])` would give `0b0010110101` */
+function fromBits(bits: number[]): number {
+  return bits.reduce((prev, bit) => {
+    if (bit !== 0 && bit !== 1) throw new Error(`Expected 0 or 1 as bit but got '${bit}' instead`);
+    return (prev << 1) | bit;
+  });
+}
+
 /**
  * Converts a string to an IPMatch object. This correspondends either to
  * an IPv4, IPv4, IPRange or IPSubnetwork object, all extending the IPMatch class.
@@ -223,6 +231,16 @@ export class IPv4 extends IPMatch {
   public toBits(): number[] {
     return this.parts.reduce<number[]>((bits, part) => [...bits, ...toBits(part, 8)], []);
   }
+  /** Converts an array of 32 bits to an IPv4, e.g. `192.0.0.0` for `[1, 1, 0, 0, 0, ...]` */
+  public static fromBits(bits: number[]): IPv4 {
+    if (bits.length !== 32) throw new Error('Expected 32 bits for IPv4.fromBits');
+    return partsToIP([
+      fromBits(bits.slice(0, 8)),
+      fromBits(bits.slice(8, 16)),
+      fromBits(bits.slice(16, 24)),
+      fromBits(bits.slice(24, 32)),
+    ]) as IPv4;
+  }
 }
 
 const IP6_WTN = wildcardToNumber(0xFFFF, 16);
@@ -414,6 +432,13 @@ export class IPv6 extends IPMatch {
   /** Converts this IP to an array of bits, e.g. `[1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, ...]` for `f8::`. */
   public toBits(): number[] {
     return this.parts.reduce<number[]>((bits, part) => [...bits, ...toBits(part, 16)], []);
+  }
+  /** Converts an array of 128 bits to an IPv6, e.g. `f8::` for `[1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, ...]` */
+  public static fromBits(bits: number[]): IPv6 {
+    if (bits.length !== 128) throw new Error('Expected 128 bits for IPv6.fromBits');
+    const parts: number[] = [];
+    for (let i = 0; i < 8; i++) parts[i] = fromBits(bits.slice(i * 16, (i + 1) * 16));
+    return partsToIP(parts) as IPv6;
   }
 }
 
