@@ -503,7 +503,8 @@ export class IPRange extends IPMatch {
       real = ip as any;
     }
     if (!real) throw new Error('The given value is not a valid IP');
-    if (real.type !== this.left.type) throw new Error('Expected same type of IP as used to construct the range');
+    // While we originally threw an error here, this seems counter-intuitive and is unlike all other implementations
+    if (real.type !== this.left.type) return false;
     return this.isLowerOrEqual(this.left, real) && this.isLowerOrEqual(real, this.right);
   }
   public equals(match: IPMatch): boolean {
