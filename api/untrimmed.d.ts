@@ -182,6 +182,10 @@ export declare class IPv4 extends IPMatch {
     toBits(): number[];
     /** Converts an array of 32 bits to an IPv4, e.g. `192.0.0.0` for `[1, 1, 0, 0, 0, ...]` */
     static fromBits(bits: number[]): IPv4;
+    /** Field present on both IPv4 and IPv6 indicating how many bits an address of that type has */
+    static readonly bits = 32;
+    /** Field present on both IPv4 and IPv6 addresses indicating how many bits an address of that type has */
+    readonly bits = 32;
 }
 
 /** Represents an IPv6 address, optionall with wildcards */
@@ -247,6 +251,10 @@ export declare class IPv6 extends IPMatch {
     toBits(): number[];
     /** Converts an array of 128 bits to an IPv6, e.g. `f8::` for `[1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, ...]` */
     static fromBits(bits: number[]): IPv6;
+    /** Field present on both IPv4 and IPv6 indicating how many bits an address of that type has */
+    static readonly bits = 128;
+    /** Field present on both IPv4 and IPv6 addresses indicating how many bits an address of that type has */
+    readonly bits = 128;
 }
 
 /**

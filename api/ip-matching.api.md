@@ -93,6 +93,8 @@ export class IPSubnetwork extends IPMatch {
 // @public
 export class IPv4 extends IPMatch {
     constructor(input: string);
+    static readonly bits = 32;
+    readonly bits = 32;
     // (undocumented)
     convertToMasks(): IPMask[];
     // (undocumented)
@@ -115,6 +117,8 @@ export class IPv4 extends IPMatch {
 // @public
 export class IPv6 extends IPMatch {
     constructor(input: string);
+    static readonly bits = 128;
+    readonly bits = 128;
     // (undocumented)
     convertToMasks(): IPMask[];
     // (undocumented)

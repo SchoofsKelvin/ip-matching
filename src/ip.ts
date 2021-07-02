@@ -241,6 +241,10 @@ export class IPv4 extends IPMatch {
       fromBits(bits.slice(24, 32)),
     ]) as IPv4;
   }
+  /** Field present on both IPv4 and IPv6 indicating how many bits an address of that type has */
+  public static readonly bits = 32;
+  /** Field present on both IPv4 and IPv6 addresses indicating how many bits an address of that type has */
+  public readonly bits = IPv4.bits;
 }
 
 const IP6_WTN = wildcardToNumber(0xFFFF, 16);
@@ -440,6 +444,10 @@ export class IPv6 extends IPMatch {
     for (let i = 0; i < 8; i++) parts[i] = fromBits(bits.slice(i * 16, (i + 1) * 16));
     return partsToIP(parts) as IPv6;
   }
+  /** Field present on both IPv4 and IPv6 indicating how many bits an address of that type has */
+  public static readonly bits = 128;
+  /** Field present on both IPv4 and IPv6 addresses indicating how many bits an address of that type has */
+  public readonly bits = IPv6.bits;
 }
 
 /** Represents either an IPv4 or an IPv6, aka single addresses (or wildcard ones) */
