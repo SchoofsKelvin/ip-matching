@@ -105,6 +105,7 @@ export class IPv4 extends IPMatch {
     matches(ip: string | IP): boolean;
     // (undocumented)
     readonly parts: number[];
+    toBits(): number[];
     toString(): string;
     // (undocumented)
     readonly type = "IPv4";
@@ -125,6 +126,7 @@ export class IPv6 extends IPMatch {
     matches(ip: string | IP): boolean;
     // (undocumented)
     readonly parts: number[];
+    toBits(): number[];
     toFullString(): string;
     toHextets(): string[];
     toLongString(): string;

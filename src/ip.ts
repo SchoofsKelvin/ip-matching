@@ -15,6 +15,15 @@ function wildcardToNumber(max: number, radix: number = 10) {
   };
 }
 
+/** `toBits(0b0010110101, 10)` would give `[0, 0, 1, 0, 1, 1, 0, 1, 0, 1]` */
+function toBits(value: number, bits: number): number[] {
+  const result: number[] = [];
+  while (bits--) {
+    result[bits] = (value >> bits) & 1;
+  }
+  return result.reverse();
+}
+
 /**
  * Converts a string to an IPMatch object. This correspondends either to
  * an IPv4, IPv4, IPRange or IPSubnetwork object, all extending the IPMatch class.
@@ -210,6 +219,10 @@ export class IPv4 extends IPMatch {
     }
     return undefined;
   }
+  /** Converts this IP to an array of bits, e.g. `[1, 1, 0, 0, 0, ...]` for `192.0.0.0`. */
+  public toBits(): number[] {
+    return this.parts.reduce<number[]>((bits, part) => [...bits, ...toBits(part, 8)], []);
+  }
 }
 
 const IP6_WTN = wildcardToNumber(0xFFFF, 16);
@@ -398,6 +411,10 @@ export class IPv6 extends IPMatch {
     }
     return undefined;
   }
+  /** Converts this IP to an array of bits, e.g. `[1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, ...]` for `f8::`. */
+  public toBits(): number[] {
+    return this.parts.reduce<number[]>((bits, part) => [...bits, ...toBits(part, 16)], []);
+  }
 }
 
 /** Represents either an IPv4 or an IPv6, aka single addresses (or wildcard ones) */
@@ -423,15 +440,6 @@ function partsToIP(parts: number[]): IP {
   Object.assign(ip, { parts });
   (ip.input as string) = ip.toString();
   return ip;
-}
-
-/** `toBits(0b0010110101, 10)` would give `[0, 0, 1, 0, 1, 1, 0, 1, 0, 1]` */
-function toBits(value: number, bits: number): number[] {
-  const result: number[] = [];
-  while (bits--) {
-    result[bits] = (value >> bits) & 1;
-  }
-  return result.reverse();
 }
 
 /** Represents a range of IP addresses, according to their numerical value */

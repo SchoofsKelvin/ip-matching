@@ -173,6 +173,8 @@ export declare class IPv4 extends IPMatch {
      * E.g. getNext for `10.0.*.255` returns `10.1.*.0`
      */
     getNext(): IPv4 | undefined;
+    /** Converts this IP to an array of bits, e.g. `[1, 1, 0, 0, 0, ...]` for `192.0.0.0`. */
+    toBits(): number[];
 }
 
 /** Represents an IPv6 address, optionall with wildcards */
@@ -233,6 +235,8 @@ export declare class IPv6 extends IPMatch {
      * E.g. getNext for `::0:*:ffff` returns `::1:*:0`
      */
     getNext(): IPv6 | undefined;
+    /** Converts this IP to an array of bits, e.g. `[1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, ...]` for `f8::`. */
+    toBits(): number[];
 }
 
 /**
