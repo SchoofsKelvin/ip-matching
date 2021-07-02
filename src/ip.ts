@@ -466,7 +466,7 @@ export function getIP(input: string | IP): IP | null {
   return null;
 }
 
-function partsToIP(parts: number[]): IP {
+export function partsToIP(parts: number[]): IP {
   if (parts.length !== 4 && parts.length !== 8)
     throw new Error(`Expected 4 or 8 parts, got ${parts.length} instead`);
   const ip = parts.length === 4 ? new IPv4('0.0.0.0') : new IPv6('::');
