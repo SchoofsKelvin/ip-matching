@@ -7,7 +7,7 @@
 
 import { getMatch, IP, IPMatch } from './ip';
 
-export { getIP, getMatch, IP, IPMask, IPMatch, IPRange, IPSubnetwork, IPv4, IPv6 } from './ip';
+export * from './ip';
 
 /**
  * Checks whether the given IP matches the given whitelist

@@ -474,6 +474,7 @@ export function getIP(input: string | IP): IP | null {
   return null;
 }
 
+/** @internal */
 export function partsToIP(parts: number[]): IP {
   if (parts.length !== 4 && parts.length !== 8)
     throw new Error(`Expected 4 or 8 parts, got ${parts.length} instead`);

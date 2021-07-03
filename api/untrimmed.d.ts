@@ -277,4 +277,7 @@ export declare class IPv6 extends IPMatch {
  */
 export declare function matches(ip: string | IP, target: string | IPMatch): boolean;
 
+/** @internal */
+export declare function partsToIP(parts: number[]): IP;
+
 export { }

@@ -157,5 +157,8 @@ export class IPv6 extends IPMatch {
 // @public
 export function matches(ip: string | IP, target: string | IPMatch): boolean;
 
+// @internal (undocumented)
+export function partsToIP(parts: number[]): IP;
+
 
 ```
