@@ -1,31 +1,30 @@
 
-import { compactMasks } from './collection';
-import { getMatch, IP, IPMask, IPv4, IPv6, partsToIP } from './ip';
+import { getMatch, IP, IPMask, IPMatch, IPv4, IPv6, partsToIP } from './ip';
+import { compactMasks } from './utils';
 
 const toString = (obj: any): string => `${obj}`;
 
-describe('compactMasks', () => {
-  function validateMasks(masks: IPMask[], compacted: IPMask[], ips: IP[]) {
-    for (const ip of ips) {
-      const a = masks.some(m => m.matches(ip));
-      const b = compacted.some(m => m.matches(ip));
-      if (a === b) continue;
-      fail(`Expected ${a} for ${ip} but got ${b}`);
-    }
+function validateMatches(original: IPMatch[], processed: IPMatch[], ips: IP[]) {
+  for (const ip of ips) {
+    const a = original.some(m => m.matches(ip));
+    const b = processed.some(m => m.matches(ip));
+    if (a === b) continue;
+    fail(`Expected ${a} for ${ip} but got ${b}`);
   }
-  function validateRandom(masks: IPMask[], compacted: IPMask[], clazz: typeof IPv4 | typeof IPv6) {
-    expect(masks[0].ip.bits).toBe(clazz.bits);
-    const ips: IP[] = [];
-    for (let i = 0; i < 1000; i++) {
-      const bits: number[] = [];
-      for (let i = 0; i < clazz.bits; i++) bits[i] = Math.random() < 0.5 ? 0 : 1;
-      ips.push(clazz.fromBits(bits));
-    }
-    validateMasks(masks, compacted, ips);
+}
+function validateRandom(original: IPMatch[], processed: IPMatch[], clazz: typeof IPv4 | typeof IPv6) {
+  const ips: IP[] = [];
+  for (let i = 0; i < 1000; i++) {
+    const bits: number[] = [];
+    for (let i = 0; i < clazz.bits; i++) bits[i] = Math.random() < 0.5 ? 0 : 1;
+    ips.push(clazz.fromBits(bits));
   }
-  function findEdgeCases(masks: IPMask[]) {
-    const cases: IP[] = [];
-    for (const mask of masks) {
+  validateMatches(original, processed, ips);
+}
+function findEdgeCases(matches: IPMatch[]) {
+  const cases: IP[] = [];
+  for (const match of matches) {
+    for (const mask of match.convertToMasks()) {
       cases.push(mask.ip);
       const prev = mask.ip.getPrevious();
       if (prev) cases.push(prev);
@@ -44,13 +43,15 @@ describe('compactMasks', () => {
       const ipNext = ip.getNext();
       if (ipNext) cases.push(ipNext);
     }
-    return cases;
   }
-  function validateEdges(masks: IPMask[], compacted: IPMask[]) {
-    const ips = [...findEdgeCases(masks), ...findEdgeCases(compacted)];
-    validateMasks(masks, compacted, ips);
-  }
+  return cases;
+}
+function validateEdges(original: IPMatch[], processed: IPMatch[]) {
+  const ips = [...findEdgeCases(original), ...findEdgeCases(processed)];
+  validateMatches(original, processed, ips);
+}
 
+describe('compactMasks', () => {
   describe('IPv4 set 1', () => {
     const masks = [
       getMatch('10.0.0.0/255.0.255.0') as IPMask,
@@ -138,3 +139,4 @@ describe('compactMasks', () => {
     });
   });
 });
+
