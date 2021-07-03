@@ -49,6 +49,12 @@ export declare class IPMask extends IPMatch {
     convertToSubnet(): IPSubnetwork | undefined;
     convertToMasks(): IPMask[];
     getAmount(): number;
+    /**
+     * Returns whether this mask is a subset of the given mask. In other words, all IP addresses matched
+     * by this mask should also be matched by the given mask, although the given mask can match others too.
+     * @throws Throws an error if the IP address types mismatch (e.g. this mask is for IPv4 but the given is IPv6)
+     */
+    isSubsetOf(mask: IPMask): boolean;
 }
 
 /**

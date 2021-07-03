@@ -1,26 +1,9 @@
-import { IPMask, IPMatch, IPv4, IPv6 } from './ip';
-
-export function isMaskSubsetOfMask(a: IPMask, b: IPMask): boolean {
-    if (a.ip.type !== b.ip.type)
-        throw new Error('Expected same type of masks (e.g. all IPv4 or all IPv6)');
-    if (a.equals(b)) return true;
-    if (a.getAmount() > b.getAmount()) return false;
-    const iBitsA = a.ip.toBits();
-    const mBitsA = a.mask.toBits();
-    const iBitsB = b.ip.toBits();
-    const mBitsB = b.mask.toBits();
-    for (let i = 0; i < iBitsA.length; i++) {
-        if (!mBitsB[i]) continue; // mask B matches every bit
-        if (!mBitsA[i]) return false; // mask A matches every bit, mask B doesn't
-        if (iBitsA[i] !== iBitsB[i]) return false; // both masks expect different bits
-    }
-    return true;
-}
+import { IPMask, IPv4, IPv6 } from './ip';
 
 type Compacter = (a: IPMask, b: IPMask) => IPMask | undefined;
 const COMPACTERS: Compacter[] = [
     // Simple compacter for when one of the subset of the other
-    (a, b) => isMaskSubsetOfMask(a, b) ? b : (isMaskSubsetOfMask(b, a) ? a : undefined),
+    (a, b) => a.isSubsetOf(b) ? b : (b.isSubsetOf(a) ? a : undefined),
     // Compact if masks are same but IPs are different
     (a, b) => {
         if (!a.mask.equals(b.mask)) return undefined;

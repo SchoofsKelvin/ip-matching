@@ -27,6 +27,7 @@ export class IPMask extends IPMatch {
     readonly input: string;
     // (undocumented)
     readonly ip: IP;
+    isSubsetOf(mask: IPMask): boolean;
     // (undocumented)
     readonly mask: IP;
     matches(ip: string | IP): boolean;

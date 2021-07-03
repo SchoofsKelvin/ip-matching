@@ -376,6 +376,36 @@ describe(IPMask, () => {
       expect(input.convertToSubnet()?.toString()).toBeUndefined();
     });
   });
+  describe('isMaskSubsetOfMask', () => {
+    const masks = [
+      /* mask0 */ getMatch('10.0.0.0/255.255.0.0') as IPMask,
+      /* mask1 */ getMatch('10.0.0.0/255.0.0.0') as IPMask,
+      /* mask2 */ getMatch('10.0.0.0/0.255.0.0') as IPMask,
+      /* mask3 */ getMatch('10.0.0.0/0.0.0.0') as IPMask,
+      /* mask4 */ getMatch('10.0.0.0/255.255.1.0') as IPMask,
+      /* mask5 */ getMatch('10.0.0.0/0.0.0.1') as IPMask,
+      /* mask6 */ getMatch('10.0.0.0/255.255.0.255') as IPMask,
+      /* mask7 */ getMatch('11.0.0.0/255.255.0.0') as IPMask,
+    ];
+    const subsets: number[][] = [
+      /* mask0 */[0, 1, 2, 3],
+      /* mask1 */[1, 3],
+      /* mask2 */[2, 3],
+      /* mask3 */[3],
+      /* mask4 */[0, 1, 2, 3, 4],
+      /* mask5 */[3, 5],
+      /* mask6 */[0, 1, 2, 3, 5, 6],
+      /* mask7 */[2, 3, 7],
+    ];
+    for (let a = 0; a < masks.length; a++) {
+      for (let b = 0; b < masks.length; b++) {
+        test(`is mask${a} (${masks[a]}) a subset of mask${b} (${masks[b]})`, () => {
+          const shouldMatch = subsets[a].includes(b);
+          expect(masks[a].isSubsetOf(masks[b])).toBe(shouldMatch);
+        });
+      }
+    }
+  });
 });
 
 describe(matches, () => {
@@ -492,6 +522,36 @@ describe('getAmount', () => {
     testIP('a:b:c::d:e:f/ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffd', IPMask, ip => expect(ip.getAmount()).toBe(2));
     testIP('a:b:c::d:e:f/ffff:ffff:f4ff:ffff:ffff:ff5f:ffff:ff00', IPMask, ip => expect(ip.getAmount()).toBe(2 ** 13));
   });
+});
+describe('isMaskSubsetOfMask', () => {
+  const masks = [
+    /* mask0 */ getMatch('10.0.0.0/255.255.0.0') as IPMask,
+    /* mask1 */ getMatch('10.0.0.0/255.0.0.0') as IPMask,
+    /* mask2 */ getMatch('10.0.0.0/0.255.0.0') as IPMask,
+    /* mask3 */ getMatch('10.0.0.0/0.0.0.0') as IPMask,
+    /* mask4 */ getMatch('10.0.0.0/255.255.1.0') as IPMask,
+    /* mask5 */ getMatch('10.0.0.0/0.0.0.1') as IPMask,
+    /* mask6 */ getMatch('10.0.0.0/255.255.0.255') as IPMask,
+    /* mask7 */ getMatch('11.0.0.0/255.255.0.0') as IPMask,
+  ];
+  const subsets: number[][] = [
+    /* mask0 */[0, 1, 2, 3],
+    /* mask1 */[1, 3],
+    /* mask2 */[2, 3],
+    /* mask3 */[3],
+    /* mask4 */[0, 1, 2, 3, 4],
+    /* mask5 */[3, 5],
+    /* mask6 */[0, 1, 2, 3, 5, 6],
+    /* mask7 */[2, 3, 7],
+  ];
+  for (let a = 0; a < masks.length; a++) {
+    for (let b = 0; b < masks.length; b++) {
+      test(`is mask${a} (${masks[a]}) a subset of mask${b} (${masks[b]})`, () => {
+        const shouldMatch = subsets[a].includes(b);
+        expect(masks[a].isSubsetOf(masks[b])).toBe(shouldMatch);
+      });
+    }
+  }
 });
 
 test('deprecated constructor', () => {

@@ -720,4 +720,25 @@ export class IPMask extends IPMatch {
   public getAmount(): number {
     return this.mask.toBits().reduce((p, b) => b ? p : (p + p), 1);
   }
+  /**
+   * Returns whether this mask is a subset of the given mask. In other words, all IP addresses matched
+   * by this mask should also be matched by the given mask, although the given mask can match others too.
+   * @throws Throws an error if the IP address types mismatch (e.g. this mask is for IPv4 but the given is IPv6)
+   */
+  public isSubsetOf(mask: IPMask): boolean {
+    if (this.ip.type !== mask.ip.type)
+      throw new Error('Expected same type of masks (e.g. all IPv4 or all IPv6)');
+    if (this.equals(mask)) return true;
+    if (this.getAmount() > mask.getAmount()) return false;
+    const iBitsA = this.ip.toBits();
+    const mBitsA = this.mask.toBits();
+    const iBitsB = mask.ip.toBits();
+    const mBitsB = mask.mask.toBits();
+    for (let i = 0; i < iBitsA.length; i++) {
+      if (!mBitsB[i]) continue; // mask B matches every bit
+      if (!mBitsA[i]) return false; // mask A matches every bit, mask B doesn't
+      if (iBitsA[i] !== iBitsB[i]) return false; // both masks expect different bits
+    }
+    return true;
+  }
 }
