@@ -371,7 +371,7 @@ describe(IPMask, () => {
       '::/ffff:0:ffff::',
       '::/f0ff::',
     ];
-    test.each(invalid)('expect %s to not be convertable to a subnet', inputStr => {
+    test.each(invalid)('expect %s to not be convertible to a subnet', inputStr => {
       const input = expectGetMatch(inputStr, IPMask);
       expect(input.convertToSubnet()?.toString()).toBeUndefined();
     });
