@@ -23,58 +23,44 @@ jobs:
     timeout-minutes: 10 
     steps:
     - uses: actions/checkout@v2
-    - name: Define variables
-      id: vars
-      run: |
-        SOURCE_NAME=${GITHUB_REF#refs/*/}
-        TARBALL_NAME="ip-matching-$SOURCE_NAME.tgz"
-        if  [[ $GITHUB_REF == refs/tags/v* ]]; then
-            TAG_VERSION=${GITHUB_REF#refs/tags/v}
-            TARBALL_NAME="ip-matching-$TAG_VERSION.tgz"
-            echo ::set-output name=TAG_VERSION::$TAG_VERSION
-        elif [[ $GITHUB_REF == refs/pull/*/head || $GITHUB_REF == refs/pull/*/merge ]]; then
-            PR_NUMBER=${GITHUB_REF#refs/pull/}
-            PR_NUMBER=${PR_NUMBER%/head}
-            PR_NUMBER=${PR_NUMBER%/merge}
-            TARBALL_NAME="ip-matching-pr-$PR_NUMBER.tgz"
-            echo ::set-output name=PR_NUMBER::$PR_NUMBER
-        elif [[ -n $SOURCE_NAME ]]; then
-            TARBALL_NAME="ip-matching-$SOURCE_NAME.tgz"
-        fi
-        TARBALL_NAME=${TARBALL_NAME//"/"/"-"}
-        echo ::set-output name=TARBALL_NAME::$TARBALL_NAME
+    - name: Event Utilities
+      uses: SchoofsKelvin/event-utilities@v1
+      id: utils
+      with:
+        artifact_prefix: "ip-matching"
+        artifact_extension: "tgz"
     - name: Use Node.js 10.x
       uses: actions/setup-node@v1
       with:
         node-version: 10.x
-    - name: Install dependencies in /
+    - name: Install dependencies
       run: yarn --frozen-lockfile
     - name: Pack tarball
-      run: yarn pack -f ${{ steps.vars.outputs.TARBALL_NAME }}
+      run: yarn pack -f ${{ steps.utils.outputs.artifact_name }}
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.1
       with:
-        name: ${{ steps.vars.outputs.TARBALL_NAME }}
-        path: ${{ steps.vars.outputs.TARBALL_NAME }}
+        name: ${{ steps.utils.outputs.artifact_name }}
+        path: ${{ steps.utils.outputs.artifact_name }}
         if-no-files-found: error
     - name: Create release
       id: create_release
-      if: ${{ success() && steps.vars.outputs.TAG_VERSION }}
+      if: ${{ success() && steps.utils.outputs.tag_version }}
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
-        release_name: Release ${{ steps.vars.outputs.TAG_VERSION }}
+        release_name: Release ${{ steps.utils.outputs.tag_version }}
         draft: true
     - name: Upload release asset
       id: upload_release_asset
-      if: ${{ success() && steps.vars.outputs.TAG_VERSION }}
+      if: ${{ success() && steps.utils.outputs.tag_version }}
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ steps.vars.outputs.TARBALL_NAME }}
-        asset_name: ${{ steps.vars.outputs.TARBALL_NAME }}
+        asset_path: ${{ steps.utils.outputs.artifact_name }}
+        asset_name: ${{ steps.utils.outputs.artifact_name }}
         asset_content_type: application/x-gzip
