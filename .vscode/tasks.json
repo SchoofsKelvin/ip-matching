@@ -29,12 +29,30 @@
 			"script": "lint-watch",
 			"group": "build",
 			"problemMatcher": {
-				"base": "$eslint-stylish",
+				"owner": "eslint",
+				"source": "eslint",
+				"fileLocation": "absolute",
 				"background": {
 					"activeOnStart": false,
 					"beginsPattern": "\\[nodemon\\] starting",
 					"endsPattern": "\\[nodemon\\] (clean exit|app crashed)"
-				}
+				},
+				"pattern": [
+					{
+						"regexp": "^((?:[a-zA-Z]:)*[\\\\\\/.]+.*?)$",
+						"kind": "location",
+						"file": 1
+					},
+					{
+						"regexp": "^\\s+(\\d+):(\\d+)\\s+(error|warning|info)\\s+(.+?)(?:\\s\\s+(.*))?$",
+						"line": 1,
+						"column": 2,
+						"severity": 3,
+						"message": 4,
+						// "code": 5, // https://github.com/microsoft/vscode/issues/128352
+						"loop": true
+					}
+				]
 			},
 			"isBackground": true,
 			"label": "ESLint - Watch",
