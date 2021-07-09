@@ -1,0 +1,12 @@
+
+# Ignore things like .eslintrc.js
+.*
+
+# Ignore root files like jest.config.js
+/*.*
+
+# Ignore non-source directories
+node_modules/
+lib/
+api/
+temp/

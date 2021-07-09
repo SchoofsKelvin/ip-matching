@@ -7,6 +7,7 @@
 			"group": "build",
 			"dependsOn": [
 				"TypeScript - Watch",
+				"ESLint - Watch",
 				"API - Watch"
 			],
 			"isBackground": true,
@@ -25,16 +26,35 @@
 		},
 		{
 			"type": "npm",
+			"script": "lint-watch",
+			"group": "build",
+			"problemMatcher": {
+				"base": "$eslint-stylish",
+				"background": {
+					"activeOnStart": false,
+					"beginsPattern": "\\[nodemon\\] starting",
+					"endsPattern": "\\[nodemon\\] (clean exit|app crashed)"
+				}
+			},
+			"isBackground": true,
+			"label": "ESLint - Watch",
+			"detail": "Run ESLint in watch mode"
+		},
+		{
+			"type": "npm",
 			"script": "watch-api",
 			"group": "build",
 			"problemMatcher": {
+				"owner": "api-extractor",
+				"source": "api-extractor",
+				"fileLocation": "absolute",
 				"pattern": {
-					"regexp": "[^\\s\\S]"
+					"regexp": "^(.*\\.d\\.ts):(\\d+):(\\d+)$"
 				},
 				"background": {
 					"activeOnStart": true,
 					"beginsPattern": "\\[nodemon\\] starting",
-					"endsPattern": "API Extractor completed"
+					"endsPattern": "\\[nodemon\\] (clean exit|app crashed)"
 				}
 			},
 			"label": "API - Watch",
