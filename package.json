@@ -31,7 +31,7 @@
     "lint": "eslint . --ext .ts --format stylish",
     "lint-watch": "nodemon -w .eslintignore -w .eslintrc.js -w src -e ts --exec yarn eslint . --ext .ts --format stylish",
     "clean": "rimraf lib",
-    "prepack": "yarn clean && yarn compile && yarn test && yarn api"
+    "prepack": "yarn clean && yarn compile && yarn lint && yarn test && yarn api"
   },
   "author": {
     "name": "Kelvin Schoofs",
