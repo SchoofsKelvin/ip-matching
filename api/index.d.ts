@@ -4,7 +4,6 @@
  * @packageDocumentation
  */
 
-
 /**
  * Tries to convert the given input string to an IP, aka an IPv4 or IPv6 object.
  * For ease-of-use, if the input is already an IPv4 or IPv6, it is returned.
@@ -39,7 +38,7 @@ export declare class IPMask extends IPMatch {
      * Does simplify the IP and mask in their IP form, but does not simplify e.g. `10.0.0.0/255.0.0.0` to `10.0.0.0/8`.
      */
     toString(): string;
-    
+
     /**
      * Tries to convert this IPMask to an IPSubnetwork. This only works if this mask is a "proper" subnet mask.
      * In other words, the bits have to be sequential. `255.255.128.0` is valid, `255.255.63.0` is not.
@@ -112,10 +111,10 @@ export declare class IPRange extends IPMatch {
     equals(match: IPMatch): boolean;
     /** Converts this IPRange to a string, by joining the two bounds with a dash, e.g. "IP1-IP2" */
     toString(): string;
-    
+
     /** Converts this IPRange to an optimized list of (CIDR) IPSubnetworks */
     convertToSubnets(): IPSubnetwork[];
-    
+
     convertToMasks(): IPMask[];
     getAmount(): number;
     /** Returns the first IP address in this range */
@@ -138,7 +137,7 @@ export declare class IPSubnetwork extends IPMatch {
     equals(match: IPMatch): boolean;
     /** Converts this IPSubnetwork to a string in CIDR representation, e.g. "IP/mask" */
     toString(): string;
-    
+
     convertToMasks(): IPMask[];
     getAmount(): number;
     /** Returns the first IP address in this range */
@@ -170,7 +169,7 @@ export declare class IPv4 extends IPMatch {
      * For example: `"10.*.0.*"`
      */
     toString(): string;
-    
+
     convertToMasks(): IPMask[];
     getAmount(): number;
     /**
@@ -239,7 +238,7 @@ export declare class IPv6 extends IPMatch {
      *    - `"::ffff:0:127.0.0.1"`
      */
     toString(): string;
-    
+
     convertToMasks(): IPMask[];
     getAmount(): number;
     /**

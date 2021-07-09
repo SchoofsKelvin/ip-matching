@@ -4,7 +4,6 @@
  * @packageDocumentation
  */
 
-
 /**
  * Tries to convert the given input string to an IP, aka an IPv4 or IPv6 object.
  * For ease-of-use, if the input is already an IPv4 or IPv6, it is returned.
