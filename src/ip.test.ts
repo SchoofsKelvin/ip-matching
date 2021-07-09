@@ -555,6 +555,6 @@ describe('isMaskSubsetOfMask', () => {
 });
 
 test('deprecated constructor', () => {
-  // @ts-expect-error
+  // @ts-expect-error Constructor went from public to protected, but should still work
   expect(new IPMatch('127.0.0.1')).toBeInstanceOf(IPv4);
 });

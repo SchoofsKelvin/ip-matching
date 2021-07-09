@@ -86,8 +86,8 @@ describe('compactMasks', () => {
         parts[0] = i >> 8;
         parts[1] = i & 255;
         ip = partsToIP(parts) as IPv4;
-        const a = masks.some(m => m.matches(ip!));
-        const b = compacted.some(m => m.matches(ip!));
+        const a = masks.some(m => m.matches(ip));
+        const b = compacted.some(m => m.matches(ip));
         if (a === b) continue;
         fail(`Expected ${a} for ${ip} but got ${b}`);
       }
@@ -130,8 +130,8 @@ describe('compactMasks', () => {
       for (let i = 0; i <= 0xffff; i++) {
         parts[0] = i;
         ip = partsToIP(parts) as IPv6;
-        const a = masks.some(m => m.matches(ip!));
-        const b = compacted.some(m => m.matches(ip!));
+        const a = masks.some(m => m.matches(ip));
+        const b = compacted.some(m => m.matches(ip));
         if (a === b) continue;
         fail(`Expected ${a} for ${ip} but got ${b}`);
       }

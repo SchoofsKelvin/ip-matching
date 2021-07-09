@@ -4,7 +4,7 @@ const IP4_REGEX = /^(\d{1,3}\.|\*\.){3}(\d{1,3}|\*)$/;
 const IP6_REGEX = /^((([a-f\d]{1,4}|\*)::?)+([a-f\d]{1,4}|\*)|:(:[a-f\d]{1,4}|:\*)+|([a-f\d]{1,4}:|\*:)+:|::)$/i;
 const IP6_MIXED_REGEX = /(.*):((?:\d{1,3}\.|\*\.){3}(\d{1,3}|\*))$/
 
-function wildcardToNumber(max: number, radix: number = 10) {
+function wildcardToNumber(max: number, radix = 10) {
   return (input: string | number) => {
     if (input === '*') return -1;
     const n = parseInt(input as string, radix);
@@ -185,7 +185,7 @@ export class IPv4 extends IPMatch {
    * Returns this IPv4 in dot-decimal/quat-dotted notation. Wildcards are represented as stars.
    * For example: `"10.*.0.*"`
    */
-  public toString() {
+  public toString(): string {
     return this.parts.map(v => v === -1 ? '*' : v).join('.');
   }
   /** @internal */
@@ -194,7 +194,7 @@ export class IPv4 extends IPMatch {
     const lower = partsToIP(ip.parts.map(v => v === -1 ? 0 : v));
     return [new IPMask(lower, partsToIP(ip.parts.map(v => v === -1 ? 0 : 255)))];
   });
-  public convertToMasks() { return IPv4.convertToMasks(this); }
+  public convertToMasks(): IPMask[] { return IPv4.convertToMasks(this); }
   public getAmount(): number {
     return this.parts.reduce((t, p) => p === -1 ? t * 256 : t, 1);
   }
@@ -346,7 +346,7 @@ export class IPv6 extends IPMatch {
     return !this.parts.includes(-1);
   }
   /** Returns an array with the 8 hextets of this address, or `"*"` for wildcard hextets */
-  public toHextets() {
+  public toHextets(): string[] {
     return this.parts.map(v => v === -1 ? '*' : v.toString(16));
   }
   /**
@@ -354,7 +354,7 @@ export class IPv6 extends IPMatch {
    * Hextets representing wildcards will be shown as `"*"` instead.
    * Example result: `"2001:0:0:0:0:0:abc:1"`
    */
-  public toLongString() {
+  public toLongString(): string {
     return this.toHextets().join(':');
   }
   /**
@@ -362,11 +362,11 @@ export class IPv6 extends IPMatch {
    * Hextets representing wildcards will be shown as `"*"` instead.
    * Example result: `"2001:0000:0000:0000:0000:0000:0abc:0001"`
    */
-  public toFullString() {
+  public toFullString(): string {
     return this.toHextets().map(v => v !== '*' && v.length < 4 ? `${'0'.repeat(4 - v.length)}${v}` : v).join(':');
   }
   /** Returns a mixed address (32 last bits representing an IPv4 address) in a mixed format e.g. "::ffff:c000:0280" as "::ffff:192.0.2.128" */
-  public toMixedString() {
+  public toMixedString(): string {
     const { parts } = this;
     // Prepare the first part
     const hextets = parts.slice(0, 6).map(v => v === -1 ? '*' : v.toString(16));
@@ -393,7 +393,7 @@ export class IPv6 extends IPMatch {
    *    - `"::ffff:127.0.0.1"`
    *    - `"::ffff:0:127.0.0.1"`
    */
-  public toString() {
+  public toString(): string {
     if (MIXED_ADDRESS_RANGES().some(m => m.matches(this))) return this.toMixedString();
     return shortenIPv6(this.toHextets());
   }
@@ -403,7 +403,7 @@ export class IPv6 extends IPMatch {
     const lower = partsToIP(ip.parts.map(v => v === -1 ? 0 : v));
     return [new IPMask(lower, partsToIP(ip.parts.map(v => v === -1 ? 0 : 0xffff)))];
   });
-  public convertToMasks() { return IPv6.convertToMasks(this); }
+  public convertToMasks(): IPMask[] { return IPv6.convertToMasks(this); }
   public getAmount(): number {
     return this.parts.reduce((t, p) => p === -1 ? t * 0x10000 : t, 1);
   }
@@ -511,7 +511,7 @@ export class IPRange extends IPMatch {
     return match instanceof IPRange && match.left.equals(this.left) && match.right.equals(this.right);
   }
   /** Converts this IPRange to a string, by joining the two bounds with a dash, e.g. "IP1-IP2" */
-  public toString() {
+  public toString(): string {
     return this.input;
   }
   /** @internal */
@@ -546,7 +546,7 @@ export class IPRange extends IPMatch {
   private static convertToMasks = createCachedConvertToMasks<IPRange>(range =>
     range.convertToSubnets().reduce<IPMask[]>((r, subnet) => [...r, ...subnet.convertToMasks()], [])
   );
-  public convertToMasks() { return IPRange.convertToMasks(this); }
+  public convertToMasks(): IPMask[] { return IPRange.convertToMasks(this); }
   public getAmount(): number {
     const lParts = this.left.parts;
     const rParts = [...this.right.parts];
@@ -565,7 +565,7 @@ export class IPRange extends IPMatch {
   public getFirst(): IP { return this.left; }
   /** Returns the last IP address in this range */
   public getLast(): IP { return this.right; }
-  protected isLowerOrEqual(left: IP, right: IP) {
+  protected isLowerOrEqual(left: IP, right: IP): boolean {
     const l = left.parts;
     const r = right.parts;
     for (let i = 0; i < l.length; i += 1) {
@@ -613,14 +613,14 @@ export class IPSubnetwork extends IPMatch {
     this.input = `${lower}/${this.bits}`;
   }
   /** Checks whether the given IP lies in this subnetwork */
-  public matches(ip: string | IP) {
+  public matches(ip: string | IP): boolean {
     return this.range.matches(ip);
   }
   public equals(match: IPMatch): boolean {
     return match instanceof IPSubnetwork && match.range.equals(this.range);
   }
   /** Converts this IPSubnetwork to a string in CIDR representation, e.g. "IP/mask" */
-  public toString() {
+  public toString(): string {
     return this.input;
   }
   /** @internal */
@@ -639,7 +639,7 @@ export class IPSubnetwork extends IPMatch {
     for (let i = parts.length, max = left.parts.length; i < max; i++) parts[i] = 0;
     return [new IPMask(subnet.range.left, partsToIP(parts))];
   });
-  public convertToMasks() { return IPSubnetwork.convertToMasks(this); }
+  public convertToMasks(): IPMask[] { return IPSubnetwork.convertToMasks(this); }
   public getAmount(): number {
     return 2 ** (this.range.left.bits - this.bits);
   }
@@ -665,7 +665,7 @@ export class IPMask extends IPMatch {
     this.input = `${lower}/${mask}`;
   }
   /** Checks whether the given IP matches this mask */
-  public matches(ip: string | IP) {
+  public matches(ip: string | IP): boolean {
     const real = getIP(ip);
     if (!real) throw new Error('The given value is not a valid IP');
     if (real.type !== this.ip.type) return false;
@@ -679,7 +679,7 @@ export class IPMask extends IPMatch {
    * Converts this IPMask to a string, by joining the IP and mask with a slash, e.g. "IP/mask".
    * Does simplify the IP and mask in their IP form, but does not simplify e.g. `10.0.0.0/255.0.0.0` to `10.0.0.0/8`.
    */
-  public toString() {
+  public toString(): string {
     return this.input;
   }
   /** @internal */
@@ -716,7 +716,7 @@ export class IPMask extends IPMatch {
    * When this is not the case, `undefined` is returned instead.
    */
   public convertToSubnet(): IPSubnetwork | undefined { return IPMask.convertToSubnet(this); }
-  public convertToMasks(): IPMask[] { return [this]; };
+  public convertToMasks(): IPMask[] { return [this]; }
   public getAmount(): number {
     return this.mask.toBits().reduce((p, b) => b ? p : (p + p), 1);
   }
