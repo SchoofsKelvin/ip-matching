@@ -3,7 +3,7 @@
 
 Keep track of all changes between versions. Should basically match the release descriptions on GitHub.
 
-## NEXT
+## 2.1.2
 
 ### Project changes
 - Updated description (in `package.json`)
