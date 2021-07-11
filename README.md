@@ -4,6 +4,7 @@
 [![GitHub package version](https://img.shields.io/github/v/release/SchoofsKelvin/ip-matching?include_prereleases&label=GitHub)](https://github.com/SchoofsKelvin/ip-matching)
 [![NPM](https://img.shields.io/npm/v/ip-matching?label=NPM)](https://www.npmjs.com/package/ip-matching)
 [![NPM downloads](https://img.shields.io/npm/dt/ip-matching?color=blue&label=NPM%20downloads)](https://www.npmjs.com/package/ip-matching)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/c62ef110c85246a58adc29ab8de2538d)](https://www.codacy.com/gh/SchoofsKelvin/ip-matching/dashboard)
 
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/SchoofsKelvin?color=green&label=GitHub%20Sponsors)](https://github.com/sponsors/SchoofsKelvin)
 [![Donate](./.github/paypal.png)](https://www.paypal.me/KSchoofs)
