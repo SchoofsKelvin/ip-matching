@@ -37,6 +37,14 @@ jobs:
       run: yarn --frozen-lockfile
     - name: Pack tarball
       run: yarn pack -f ${{ steps.utils.outputs.artifact_name }}
+    - name: Add commit check status
+      uses: Sibz/github-status-action@v1
+      if: ${{ always() }}
+      with: 
+        authToken: ${{ secrets.GITHUB_TOKEN }}
+        context: 'Yarn pack'
+        state: 'success'
+        sha: ${{ github.event.pull_request.head.sha || github.sha }}
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.1
       with:
