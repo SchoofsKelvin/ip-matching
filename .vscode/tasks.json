@@ -15,7 +15,7 @@
 		},
 		{
 			"type": "npm",
-			"script": "watch",
+			"script": "compile:watch",
 			"problemMatcher": [
 				"$tsc-watch"
 			],
@@ -26,7 +26,7 @@
 		},
 		{
 			"type": "npm",
-			"script": "lint-watch",
+			"script": "lint:watch",
 			"group": "build",
 			"problemMatcher": {
 				"owner": "eslint",
@@ -60,7 +60,7 @@
 		},
 		{
 			"type": "npm",
-			"script": "watch-api",
+			"script": "api:watch",
 			"group": "build",
 			"problemMatcher": {
 				"owner": "api-extractor",

@@ -4,7 +4,7 @@
   "type": "commonjs",
   "main": "lib/index.js",
   "types": "api/index.d.ts",
-  "description": "See whether an IPv4 or IPv6 address matches an IP (range) or subnetwork",
+  "description": "Utilities for IPv4/IPv6 ranges/subnets/masks parsing/matching, string representations, ...",
   "dependencies": {},
   "devDependencies": {
     "@microsoft/api-extractor": "^7.18.1",
@@ -22,14 +22,14 @@
   },
   "scripts": {
     "compile": "tsc",
-    "watch": "tsc -w",
+    "compile:watch": "tsc -w",
     "test": "jest",
-    "watch-test": "jest --watch",
+    "test:watch": "jest --watch",
     "api": "api-extractor run",
-    "api-local": "api-extractor run -l",
-    "watch-api": "nodemon -w api-extractor.json -w lib -e d.ts --exec yarn api-extractor -- run -l",
+    "api:local": "api-extractor run -l",
+    "api:watch": "nodemon -w api-extractor.json -w lib -e d.ts --exec yarn api:local",
     "lint": "eslint . --ext .ts --format stylish",
-    "lint-watch": "nodemon -w .eslintignore -w .eslintrc.js -w src -e ts --exec yarn eslint . --ext .ts --format stylish",
+    "lint:watch": "nodemon -w .eslintignore -w .eslintrc.js -w src -e ts --exec yarn eslint . --ext .ts --format stylish",
     "clean": "rimraf lib",
     "prepack": "yarn clean && yarn compile && yarn lint && yarn test && yarn api"
   },
@@ -38,6 +38,7 @@
     "url": "https://github.com/SchoofsKelvin",
     "email": "schoofs.kelvin@gmail.com"
   },
+  "homepage": "https://www.npmjs.com/package/ip-matching",
   "bugs": "https://github.com/SchoofsKelvin/ip-matching/issues",
   "repository": "SchoofsKelvin/ip-matching",
   "license": "LGPL-3.0-only",
