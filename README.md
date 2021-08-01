@@ -94,6 +94,36 @@ You can take a look at the [test code](https://github.com/SchoofsKelvin/ip-match
 
 The IPMask's `toString()` method does not automatically simplify e.g. `/255.0.0.0` to `/8`, even though those are equivalent. Since 2.0.0, IPMask comes with a method `convertToSubnet()` which returns an equivalent IPSubnetwork if possible, otherwise `undefined`.
 
+## Comparison to similar libraries
+
+Here are some well-known similar NPM packages and what features they have that we lack and vice versa. In all cases, feel free to [request a new feature](https://github.com/SchoofsKelvin/ip-matching/issues) if you think it's a good fit for this module.
+
+### [ip-address](https://www.npmjs.com/package/ip-address)
+- Supports decoding Teredo information
+- Supports reading special properties (multicast prefix, unique local address prefix, is link local, ...)
+- Supports parsing IPv6 addresses (and ports) from URLs
+- Supports parsing IPv6 ARPA addresses (`.ip6.arpa`) and scoped (zoned) addresses
+- Does not support wildcard IP addresses
+- Does not support IP ranges or masks (nor any related methods)
+- Does not support getting amount of IP addresses within subnet
+- Does not support getting the previous/next of an IP address
+
+### [ip](https://www.npmjs.com/package/ip)
+- Abandoned for over 4 years (since early 2017)
+- Supports fetching local IP address
+- Supports NOT/OR operations on/between IP addresses
+- Supports regular IPv4/IPv6 addresses
+- Supports IPv4 subnets (with subnet properties)
+- Does not support wildcard IP addresses or IPv6 subnets
+- Does not support IP ranges or masks (nor any related methods)
+- Does not support getting the previous/next of an IP address
+
+### [netmask](https://www.npmjs.com/package/netmask)
+- Only supports IPv4 CIDR blocks (with subnet information)
+- Supports getting the next subnet of the same size
+- Supports checking whether one subnet is part of another
+- Does not support anything besides IPv4 subnets
+
 ## Links
 * GitHub: https://github.com/SchoofsKelvin/ip-matching
 * NPM: https://www.npmjs.com/package/ip-matching
