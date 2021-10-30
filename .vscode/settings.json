@@ -1,9 +1,26 @@
 {
-    "typescript.tsdk": "node_modules\\typescript\\lib",
+    "eslint.nodePath": ".yarn/sdks",
+    "typescript.tsdk": ".yarn/sdks/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true,
     "files.exclude": {
-        "*.lock": true,
         "lib/": true,
         "node_modules/": true,
-        "temp/": true
-    }
+        "temp/": true,
+        ".github/": true,
+        ".yarn/": true,
+        ".yarnrc.yml": true,
+        "*.lock": true,
+        ".pnp.*": true,
+        ".npmignore": true,
+        ".gitignore": true,
+        ".eslint*": true,
+        "api-extractor.json": true,
+        "jest.config.js": true,
+        "tsconfig.json": true
+    },
+    "search.exclude": {
+        "**/.yarn": true,
+        "**/.pnp.*": true
+    },
+    "jest.jestCommandLine": "yarn test"
 }

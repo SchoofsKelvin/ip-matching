@@ -5,7 +5,6 @@
   "main": "lib/index.js",
   "types": "api/index.d.ts",
   "description": "Utilities for IPv4/IPv6 ranges/subnets/masks parsing/matching, string representations, ...",
-  "dependencies": {},
   "devDependencies": {
     "@microsoft/api-extractor": "^7.18.1",
     "@types/jest": "^26.0.20",
@@ -56,5 +55,6 @@
     "net",
     "network",
     "mask"
-  ]
+  ],
+  "packageManager": "yarn@3.1.0"
 }

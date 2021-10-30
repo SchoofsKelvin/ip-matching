@@ -29,14 +29,24 @@ jobs:
       with:
         artifact_prefix: "ip-matching"
         artifact_extension: "tgz"
-    - name: Use Node.js 10.x
+    - name: Use Node.js 12.x
       uses: actions/setup-node@v1
       with:
-        node-version: 10.x
+        node-version: 12.x
+    - name: Get Yarn cache directory
+      id: yarn-cache
+      run: echo "::set-output name=dir::$(yarn config get cacheFolder)"
+    - name: Yarn cache
+      uses: actions/cache@v2.1.4
+      with:
+        path: ${{ steps.yarn-cache.outputs.dir }}
+        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
     - name: Install dependencies
-      run: yarn --frozen-lockfile
+      run: yarn --immutable
     - name: Pack tarball
-      run: yarn pack -f ${{ steps.utils.outputs.artifact_name }}
+      run: yarn pack -o ${{ steps.utils.outputs.artifact_name }}
     - name: Add commit check status
       uses: Sibz/github-status-action@v1
       if: ${{ always() }}
