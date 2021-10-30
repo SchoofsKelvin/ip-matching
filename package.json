@@ -56,5 +56,12 @@
     "network",
     "mask"
   ],
+  "files": [
+    "api/",
+    "lib/*.js",
+    "!lib/*.test.js",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "packageManager": "yarn@3.1.0"
 }
