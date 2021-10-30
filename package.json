@@ -1,9 +1,11 @@
 {
   "name": "ip-matching",
   "version": "2.1.2",
-  "type": "commonjs",
-  "main": "lib/index.js",
-  "types": "api/index.d.ts",
+  "type": "module",
+  "main": "./lib/cjs/index.js",
+  "exports": "./lib/cjs/index.js",
+  "module": "./lib/esm/index.mjs",
+  "types": "./api/index.d.ts",
   "description": "Utilities for IPv4/IPv6 ranges/subnets/masks parsing/matching, string representations, ...",
   "devDependencies": {
     "@microsoft/api-extractor": "^7.18.1",
@@ -22,6 +24,7 @@
   "scripts": {
     "compile": "tsc",
     "compile:watch": "tsc -w",
+    "compile:esm": "tsc -p tsconfig.esm.json",
     "test": "jest",
     "test:watch": "jest --watch",
     "api": "api-extractor run",
@@ -29,8 +32,7 @@
     "api:watch": "nodemon -w api-extractor.json -w lib -e d.ts --exec yarn api:local",
     "lint": "eslint . --ext .ts --format stylish",
     "lint:watch": "nodemon -w .eslintignore -w .eslintrc.js -w src -e ts --exec yarn eslint . --ext .ts --format stylish",
-    "clean": "rimraf lib",
-    "prepack": "yarn clean && yarn compile && yarn lint && yarn test && yarn api"
+    "prepack": "yarn node ./prepack.cjs"
   },
   "author": {
     "name": "Kelvin Schoofs",
@@ -58,8 +60,8 @@
   ],
   "files": [
     "api/",
-    "lib/*.js",
-    "!lib/*.test.js",
+    "lib/**/*.js",
+    "!lib/**/*.test.js",
     "README.md",
     "CHANGELOG.md"
   ],
